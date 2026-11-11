@@ -1,0 +1,23 @@
+{
+  "name": "blindbox",
+  "version": "4.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:server": "sh server/build.sh",
+    "simulate": "server/blindbox-server --simulate 2000",
+    "test": "vite build && node tests/play.mjs",
+    "test:api": "python3 server/tests/api_test.py",
+    "test:all": "npm run test:api && npm test",
+    "start": "vite build && server/blindbox-server --web dist --open",
+    "package": "sh tools/package.sh"
+  },
+  "dependencies": {
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.64.1",
+    "vite": "^8.3.5"
+  }
+}

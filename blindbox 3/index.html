@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>开盲盒 · Aholo Lux3D 黑客松</title>
+  <style>
+    /* 直接双击打开 index.html 时脚本不会运行，只显示这段提示 */
+    #boot-msg { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 12px; background: #0c0c16; color: #eee; z-index: 100;
+      font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif; text-align: center; }
+    #boot-msg h2 { margin: 0; font-size: 26px; color: #f5a623; }
+    #boot-msg p { margin: 0; color: #9aa0b0; }
+    body.ready #boot-msg { display: none; }
+  </style>
+</head>
+<body>
+  <div id="boot-msg">
+    <h2 id="boot-title">请双击 启动游戏.bat 运行</h2>
+    <p id="boot-sub">游戏需要通过启动器打开（macOS：右键 启动游戏.command → 打开）</p>
+  </div>
+  <div id="app">
+    <header>
+      <h1>🎁 开盲盒</h1>
+      <div id="coins">0</div>
+      <button class="btn btn-danger" id="btn-reset" type="button">重置进度</button>
+      <div class="tabs">
+        <button type="button" data-tab="shop" class="active">商店</button>
+        <button type="button" data-tab="storage">仓库</button>
+        <button type="button" data-tab="case">展柜</button>
+      </div>
+    </header>
+    <div class="pity-bar" id="pity-info"></div>
+    <main>
+      <div id="panel-shop" class="panel"></div>
+      <div id="panel-storage" class="panel hidden"></div>
+      <div id="panel-case" class="panel hidden"></div>
+    </main>
+  </div>
+  <div id="toast"></div>
+  <div id="win-overlay">
+    <h2>🎉 全部集齐！</h2>
+    <p id="win-stats">所有手办都放进展柜了。</p>
+    <p style="color:#9aa0b0;font-size:14px">截图分享你的展柜吧。</p>
+    <button class="btn btn-primary" id="btn-win-close" type="button">继续观赏</button>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
