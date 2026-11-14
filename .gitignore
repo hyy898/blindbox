@@ -1,0 +1,20 @@
+# macOS metadata
+.DS_Store
+
+# Dependencies and local build outputs
+node_modules/
+/blindbox/server/build/
+/blindbox/dist/
+/blindbox/server/blindbox-server
+/blindbox/blindbox-server.exe
+/blindbox/blindbox-server-mac-*
+
+# Local game saves and generated model inventory
+/blindbox/data/
+/blindbox/models/README.txt
+
+# Local secrets and logs
+.env
+.env.*
+!.env.example
+*.log
