@@ -1,0 +1,629 @@
+{
+  "sourceCommit": "0e83f6f",
+  "configSource": "existing shipping server --dump-config (no game state mutation)",
+  "configSha256": "d2faf84285ebe8c41d1edcc4cf0949da361d67716162774d87e8e1f02bcadacf",
+  "generatedAt": "2026-11-14T15:29:53.835162+00:00",
+  "totalItems": 31,
+  "availableModels": 6,
+  "missingModels": 25,
+  "items": [
+    {
+      "id": "ms-01",
+      "name": "打瞌睡的饭团",
+      "seriesId": "midnight-snack",
+      "seriesName": "深夜食堂",
+      "rarity": "common",
+      "modelPath": "blindbox/models/ms-01.glb",
+      "available": true,
+      "bytes": 9413908,
+      "sha256": "660d73aa12a777869dd0e3ca542d397a5ff7eddadf29ede4f821500fe5539861",
+      "format": "GLB 2.0",
+      "externalDependencies": [],
+      "extensionsUsed": [
+        "KHR_materials_specular"
+      ],
+      "extensionsRequired": [],
+      "meshCount": 1,
+      "primitiveCount": 1,
+      "positionVertices": 92122,
+      "triangles": 153330,
+      "textures": [
+        {
+          "mimeType": "image/png",
+          "embedded": true,
+          "width": 2048,
+          "height": 2048,
+          "bytes": 3441924
+        },
+        {
+          "mimeType": "image/png",
+          "embedded": true,
+          "width": 2048,
+          "height": 2048,
+          "bytes": 602316
+        },
+        {
+          "mimeType": "image/png",
+          "embedded": true,
+          "width": 2048,
+          "height": 2048,
+          "bytes": 579314
+        }
+      ],
+      "bounds": {
+        "min": [
+          -0.05999999865889549,
+          -0.054953090846538544,
+          -0.05026467517018318
+        ],
+        "max": [
+          0.05999999865889549,
+          0.054953090846538544,
+          0.05026467517018318
+        ]
+      },
+      "browserVerification": "passed: actual GLB and textures rendered in production viewer; front view inspected",
+      "thumbnail": "web/public/thumbnails/ms-01.png",
+      "orientationDegrees": 0
+    },
+    {
+      "id": "ms-02",
+      "name": "泡澡的拉面",
+      "seriesId": "midnight-snack",
+      "seriesName": "深夜食堂",
+      "rarity": "common",
+      "modelPath": "blindbox/models/ms-02.glb",
+      "available": true,
+      "bytes": 11119436,
+      "sha256": "33d82108a83ddc63c1b13efc56e989e295b7f2ca3aa0de52f234542876e42789",
+      "format": "GLB 2.0",
+      "externalDependencies": [],
+      "extensionsUsed": [
+        "KHR_materials_specular"
+      ],
+      "extensionsRequired": [],
+      "meshCount": 1,
+      "primitiveCount": 1,
+      "positionVertices": 107041,
+      "triangles": 169758,
+      "textures": [
+        {
+          "mimeType": "image/png",
+          "embedded": true,
+          "width": 2048,
+          "height": 2048,
+          "bytes": 3480316
+        },
+        {
+          "mimeType": "image/png",
+          "embedded": true,
+          "width": 2048,
+          "height": 2048,
+          "bytes": 1097744
+        },
+        {
+          "mimeType": "image/png",
+          "embedded": true,
+          "width": 2048,
+          "height": 2048,
+          "bytes": 1076472
+        }
+      ],
+      "bounds": {
+        "min": [
+          -0.04500000178813934,
+          -0.04071987420320511,
+          -0.04566793143749237
+        ],
+        "max": [
+          0.04500000178813934,
+          0.04071987420320511,
+          0.04566793143749237
+        ]
+      },
+      "browserVerification": "passed: actual GLB and textures rendered in production viewer; front view inspected",
+      "thumbnail": "web/public/thumbnails/ms-02.png",
+      "orientationDegrees": 0
+    },
+    {
+      "id": "ms-03",
+      "name": "生气的辣椒",
+      "seriesId": "midnight-snack",
+      "seriesName": "深夜食堂",
+      "rarity": "common",
+      "modelPath": "blindbox/models/ms-03.glb",
+      "available": true,
+      "bytes": 9459920,
+      "sha256": "993aa0ce7319d338ca8b2a72d40a69fce779f9665743e51fd826e2b8dfcafcc7",
+      "format": "GLB 2.0",
+      "externalDependencies": [],
+      "extensionsUsed": [
+        "KHR_materials_specular"
+      ],
+      "extensionsRequired": [],
+      "meshCount": 1,
+      "primitiveCount": 1,
+      "positionVertices": 81003,
+      "triangles": 135816,
+      "textures": [
+        {
+          "mimeType": "image/png",
+          "embedded": true,
+          "width": 2048,
+          "height": 2048,
+          "bytes": 3154244
+        },
+        {
+          "mimeType": "image/png",
+          "embedded": true,
+          "width": 2048,
+          "height": 2048,
+          "bytes": 1125748
+        },
+        {
+          "mimeType": "image/png",
+          "embedded": true,
+          "width": 2048,
+          "height": 2048,
+          "bytes": 955534
+        }
+      ],
+      "bounds": {
+        "min": [
+          -0.03699199855327606,
+          -0.05999999865889549,
+          -0.024365819990634918
+        ],
+        "max": [
+          0.03699199855327606,
+          0.05999999865889549,
+          0.024365819990634918
+        ]
+      },
+      "browserVerification": "passed: actual GLB and textures rendered in production viewer; front view inspected",
+      "thumbnail": "web/public/thumbnails/ms-03.png",
+      "orientationDegrees": 0
+    },
+    {
+      "id": "ms-04",
+      "name": "举重的汉堡",
+      "seriesId": "midnight-snack",
+      "seriesName": "深夜食堂",
+      "rarity": "rare",
+      "modelPath": "blindbox/models/ms-04.glb",
+      "available": true,
+      "bytes": 9776364,
+      "sha256": "77411b59702b9f36c55ded296090a026f7627c186b78061d7a4c29ac288599a0",
+      "format": "GLB 2.0",
+      "externalDependencies": [],
+      "extensionsUsed": [
+        "KHR_materials_specular"
+      ],
+      "extensionsRequired": [],
+      "meshCount": 1,
+      "primitiveCount": 1,
+      "positionVertices": 80197,
+      "triangles": 111762,
+      "textures": [
+        {
+          "mimeType": "image/png",
+          "embedded": true,
+          "width": 2048,
+          "height": 2048,
+          "bytes": 3793576
+        },
+        {
+          "mimeType": "image/png",
+          "embedded": true,
+          "width": 2048,
+          "height": 2048,
+          "bytes": 1068524
+        },
+        {
+          "mimeType": "image/png",
+          "embedded": true,
+          "width": 2048,
+          "height": 2048,
+          "bytes": 1004328
+        }
+      ],
+      "bounds": {
+        "min": [
+          -0.09000000357627869,
+          -0.08803781867027283,
+          -0.09002712368965149
+        ],
+        "max": [
+          0.09000000357627869,
+          0.08803781867027283,
+          0.09002712368965149
+        ]
+      },
+      "browserVerification": "passed: actual GLB and textures rendered in production viewer; front view inspected",
+      "thumbnail": "web/public/thumbnails/ms-04.png",
+      "orientationDegrees": 0
+    },
+    {
+      "id": "ms-05",
+      "name": "弹吉他的寿司",
+      "seriesId": "midnight-snack",
+      "seriesName": "深夜食堂",
+      "rarity": "rare",
+      "modelPath": "blindbox/models/ms-05.glb",
+      "available": true,
+      "bytes": 14918788,
+      "sha256": "2d119e77f583e47e6a0afe06b3397fc68468370717f93659829a3c31eb9b9b2b",
+      "format": "GLB 2.0",
+      "externalDependencies": [],
+      "extensionsUsed": [
+        "KHR_materials_specular"
+      ],
+      "extensionsRequired": [],
+      "meshCount": 1,
+      "primitiveCount": 1,
+      "positionVertices": 160275,
+      "triangles": 234084,
+      "textures": [
+        {
+          "mimeType": "image/png",
+          "embedded": true,
+          "width": 2048,
+          "height": 2048,
+          "bytes": 4128228
+        },
+        {
+          "mimeType": "image/png",
+          "embedded": true,
+          "width": 2048,
+          "height": 2048,
+          "bytes": 1486916
+        },
+        {
+          "mimeType": "image/png",
+          "embedded": true,
+          "width": 2048,
+          "height": 2048,
+          "bytes": 1363318
+        }
+      ],
+      "bounds": {
+        "min": [
+          -0.04806635528802872,
+          -0.04749999940395355,
+          -0.030671609565615654
+        ],
+        "max": [
+          0.04806635528802872,
+          0.04749999940395355,
+          0.030671609565615654
+        ]
+      },
+      "browserVerification": "passed: actual GLB and textures rendered in production viewer; front view inspected",
+      "thumbnail": "web/public/thumbnails/ms-05.png",
+      "orientationDegrees": 0
+    },
+    {
+      "id": "ms-06",
+      "name": "饺子武士",
+      "seriesId": "midnight-snack",
+      "seriesName": "深夜食堂",
+      "rarity": "epic",
+      "modelPath": "blindbox/models/ms-06.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "ms-07",
+      "name": "金色月饼王",
+      "seriesId": "midnight-snack",
+      "seriesName": "深夜食堂",
+      "rarity": "secret",
+      "modelPath": "blindbox/models/ms-07.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "wa-01",
+      "name": "送外卖的柯基",
+      "seriesId": "working-animals",
+      "seriesName": "打工动物",
+      "rarity": "common",
+      "modelPath": "blindbox/models/wa-01.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "wa-02",
+      "name": "收银的仓鼠",
+      "seriesId": "working-animals",
+      "seriesName": "打工动物",
+      "rarity": "common",
+      "modelPath": "blindbox/models/wa-02.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "wa-03",
+      "name": "加班的猫头鹰",
+      "seriesId": "working-animals",
+      "seriesName": "打工动物",
+      "rarity": "common",
+      "modelPath": "blindbox/models/wa-03.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "wa-04",
+      "name": "咖啡师水獭",
+      "seriesId": "working-animals",
+      "seriesName": "打工动物",
+      "rarity": "rare",
+      "modelPath": "blindbox/models/wa-04.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "wa-05",
+      "name": "消防员熊猫",
+      "seriesId": "working-animals",
+      "seriesName": "打工动物",
+      "rarity": "rare",
+      "modelPath": "blindbox/models/wa-05.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "wa-06",
+      "name": "宇航员企鹅",
+      "seriesId": "working-animals",
+      "seriesName": "打工动物",
+      "rarity": "epic",
+      "modelPath": "blindbox/models/wa-06.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "wa-07",
+      "name": "董事长锦鲤",
+      "seriesId": "working-animals",
+      "seriesName": "打工动物",
+      "rarity": "secret",
+      "modelPath": "blindbox/models/wa-07.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "wd-01",
+      "name": "害羞的电饭煲",
+      "seriesId": "weird-appliances",
+      "seriesName": "怪奇家电",
+      "rarity": "common",
+      "modelPath": "blindbox/models/wd-01.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "wd-02",
+      "name": "跳舞的台灯",
+      "seriesId": "weird-appliances",
+      "seriesName": "怪奇家电",
+      "rarity": "common",
+      "modelPath": "blindbox/models/wd-02.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "wd-03",
+      "name": "打嗝的洗衣机",
+      "seriesId": "weird-appliances",
+      "seriesName": "怪奇家电",
+      "rarity": "common",
+      "modelPath": "blindbox/models/wd-03.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "wd-04",
+      "name": "冲浪的电风扇",
+      "seriesId": "weird-appliances",
+      "seriesName": "怪奇家电",
+      "rarity": "rare",
+      "modelPath": "blindbox/models/wd-04.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "wd-05",
+      "name": "唱歌的冰箱",
+      "seriesId": "weird-appliances",
+      "seriesName": "怪奇家电",
+      "rarity": "rare",
+      "modelPath": "blindbox/models/wd-05.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "wd-06",
+      "name": "机甲吸尘器",
+      "seriesId": "weird-appliances",
+      "seriesName": "怪奇家电",
+      "rarity": "epic",
+      "modelPath": "blindbox/models/wd-06.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "wd-07",
+      "name": "复古电视之神",
+      "seriesId": "weird-appliances",
+      "seriesName": "怪奇家电",
+      "rarity": "secret",
+      "modelPath": "blindbox/models/wd-07.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "mf-01",
+      "name": "奶蛋",
+      "seriesId": "milk-frog",
+      "seriesName": "奶蛙一家",
+      "rarity": "common",
+      "modelPath": "blindbox/models/mf-01.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "mf-02",
+      "name": "奶鼠",
+      "seriesId": "milk-frog",
+      "seriesName": "奶蛙一家",
+      "rarity": "common",
+      "modelPath": "blindbox/models/mf-02.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "mf-03",
+      "name": "奶鸡",
+      "seriesId": "milk-frog",
+      "seriesName": "奶蛙一家",
+      "rarity": "common",
+      "modelPath": "blindbox/models/mf-03.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "mf-04",
+      "name": "奶猫",
+      "seriesId": "milk-frog",
+      "seriesName": "奶蛙一家",
+      "rarity": "common",
+      "modelPath": "blindbox/models/mf-04.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "mf-05",
+      "name": "奶狗",
+      "seriesId": "milk-frog",
+      "seriesName": "奶蛙一家",
+      "rarity": "rare",
+      "modelPath": "blindbox/models/mf-05.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "mf-06",
+      "name": "奶兔",
+      "seriesId": "milk-frog",
+      "seriesName": "奶蛙一家",
+      "rarity": "rare",
+      "modelPath": "blindbox/models/mf-06.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "mf-07",
+      "name": "奶屎",
+      "seriesId": "milk-frog",
+      "seriesName": "奶蛙一家",
+      "rarity": "rare",
+      "modelPath": "blindbox/models/mf-07.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "mf-08",
+      "name": "奶豆",
+      "seriesId": "milk-frog",
+      "seriesName": "奶蛙一家",
+      "rarity": "epic",
+      "modelPath": "blindbox/models/mf-08.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "mf-09",
+      "name": "小奶蛙",
+      "seriesId": "milk-frog",
+      "seriesName": "奶蛙一家",
+      "rarity": "epic",
+      "modelPath": "blindbox/models/mf-09.glb",
+      "available": false,
+      "browserVerification": "not possible: source model absent; explicit missing state only"
+    },
+    {
+      "id": "mf-10",
+      "name": "奶蛙",
+      "seriesId": "milk-frog",
+      "seriesName": "奶蛙一家",
+      "rarity": "secret",
+      "modelPath": "blindbox/models/mf-10.glb",
+      "available": true,
+      "bytes": 20397752,
+      "sha256": "565403b3021555bb91de0985d6c9223cb87a48c5e3b442e26f601951a8d9d8a0",
+      "format": "GLB 2.0",
+      "externalDependencies": [],
+      "extensionsUsed": [
+        "KHR_materials_specular"
+      ],
+      "extensionsRequired": [],
+      "meshCount": 1,
+      "primitiveCount": 4,
+      "positionVertices": 188276,
+      "triangles": 276599,
+      "textures": [
+        {
+          "mimeType": "image/png",
+          "embedded": true,
+          "width": 2048,
+          "height": 2048,
+          "bytes": 5929920
+        },
+        {
+          "mimeType": "image/png",
+          "embedded": true,
+          "width": 2048,
+          "height": 2048,
+          "bytes": 1243016
+        },
+        {
+          "mimeType": "image/png",
+          "embedded": true,
+          "width": 2048,
+          "height": 2048,
+          "bytes": 1054536
+        },
+        {
+          "mimeType": "image/png",
+          "embedded": true,
+          "width": 1254,
+          "height": 1254,
+          "bytes": 874748
+        },
+        {
+          "mimeType": "image/png",
+          "embedded": true,
+          "width": 4096,
+          "height": 4096,
+          "bytes": 1945608
+        }
+      ],
+      "bounds": {
+        "min": [
+          -0.20999251306056976,
+          -0.4000000059604645,
+          -0.2317664921283722
+        ],
+        "max": [
+          0.20999251306056976,
+          0.4000000059604645,
+          0.2317664921283722
+        ]
+      },
+      "browserVerification": "passed: actual GLB and textures rendered in production viewer; front view inspected",
+      "thumbnail": "web/public/thumbnails/mf-10.png",
+      "orientationDegrees": 90
+    }
+  ]
+}

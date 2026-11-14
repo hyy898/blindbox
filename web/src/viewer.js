@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { modelAssets } from './assets.js';
 import './viewer.css';
 
 const LOAD_TIMEOUT = 25000;
@@ -76,7 +77,10 @@ function addStage(scene, theme) {
 
 /** A display-only viewer. Loading/retrying never calls the game or changes inventory. */
 export async function createViewer(container, {
-  item, modelUrl, theme = {}, rotation = 0, reducedMotion = false, onRotation = () => {}
+  item, modelUrl, theme = {}, rotation = 0, reducedMotion = false, onRotation = () => {},
+  knownMissing = modelAssets[item.id]?.available === false,
+  thumbnail = modelAssets[item.id]?.thumbnail,
+  orientation = modelAssets[item.id]?.orientation || 0
 }) {
   const element = document.createElement('div');
   element.className = 'qiwu-viewer';
@@ -106,6 +110,16 @@ export async function createViewer(container, {
   const statusDetail = element.querySelector('.qiwu-viewer-status-detail');
   const retryButton = element.querySelector('.qiwu-viewer-retry');
   const controls = element.querySelector('.qiwu-viewer-controls');
+  let preview = null;
+  let previewFailed = false;
+  if (thumbnail) {
+    preview = document.createElement('img');
+    preview.className = 'qiwu-viewer-preview';
+    preview.src = thumbnail;
+    preview.alt = `${item.name}的真实模型静态预览`;
+    preview.addEventListener('error', () => { previewFailed = true; preview.hidden = true; }, { once: true });
+    element.prepend(preview);
+  }
   element.querySelector('.qiwu-viewer-stage-label').textContent = theme.stage || theme.label || '奇物展台';
   let disposed = false;
   let token = 0;
@@ -129,9 +143,12 @@ export async function createViewer(container, {
     status.hidden = kind === 'ready';
     statusTitle.textContent = title;
     statusDetail.textContent = detail;
-    retryButton.hidden = kind !== 'error';
+    retryButton.hidden = !['error', 'missing'].includes(kind);
+    retryButton.textContent = kind === 'missing' ? '检查模型更新' : '重新加载模型';
     controls.hidden = kind !== 'ready';
+    if (preview) preview.hidden = kind === 'ready' || previewFailed;
     canvas.setAttribute('aria-busy', String(kind === 'loading'));
+    canvas.tabIndex = kind === 'ready' ? 0 : -1;
   }
 
   function render() {
@@ -144,16 +161,18 @@ export async function createViewer(container, {
 
   function resize() {
     if (!renderer || disposed) return;
-    const width = Math.max(1, element.clientWidth);
-    const height = Math.max(1, element.clientHeight);
+    const width = element.clientWidth, height = element.clientHeight;
+    if (width < 1 || height < 1) return;
+    const ratio = renderer.getPixelRatio();
+    // Reassigning canvas dimensions clears WebGL, even when the size is unchanged.
+    if (canvas.width === Math.floor(width * ratio) && canvas.height === Math.floor(height * ratio)) return;
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
-    // The full display fits narrow collection cards as well as the large reveal.
     const distance = camera.aspect < 0.9 ? 5 / Math.max(camera.aspect, 0.6) : 5;
     camera.position.set(0, 1.8, distance);
     camera.lookAt(0, 0.65, 0);
     camera.updateProjectionMatrix();
-    render();
+    renderer.render(scene, camera);
   }
 
   function clearModel() {
@@ -167,7 +186,7 @@ export async function createViewer(container, {
   function setRotation(value) {
     if (!Number.isFinite(value) || disposed) return;
     angle = value;
-    if (model) model.rotation.y = angle;
+    if (model) model.rotation.y = angle + orientation;
     render();
   }
 
@@ -180,7 +199,8 @@ export async function createViewer(container, {
   function initRenderer() {
     if (renderer) return true;
     try {
-      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'low-power' });
+      // Keep the last on-demand frame available to WebKit compositing/snapshots.
+      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, preserveDrawingBuffer: true, powerPreference: 'low-power' });
       renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75));
       renderer.setClearColor(0, 0);
       renderer.shadowMap.enabled = true;
@@ -215,17 +235,23 @@ export async function createViewer(container, {
     }
   }
 
-  async function retry() {
+  async function retry(initial = false) {
     if (disposed) return;
     const request = ++token;
     controller?.abort();
     clearTimeout(timeout);
     clearModel();
+    // The manifest avoids 25 predictable 404s. A manual retry still checks the
+    // original URL, so newly supplied assets can appear without another draw.
+    if (initial === true && knownMissing) {
+      setStatus('missing', '模型待补齐', `${item.name} · ${item.id}`);
+      return;
+    }
     setStatus('loading', '正在取出这件奇物', '模型加载中，抽取结果已保留。');
     render();
     if (!initRenderer()) return;
     if (!modelUrl) {
-      setStatus('error', '这件奇物的模型尚未到店', `${item.name} · ${item.id}，当前没有可用的模型文件。`);
+      setStatus('missing', '模型待补齐', `${item.name} · ${item.id}`);
       return;
     }
     const abort = new AbortController();
@@ -272,7 +298,7 @@ export async function createViewer(container, {
       pivot.name = `collectible-${item.id}`;
       pivot.userData = { itemId: item.id, modelUrl: absoluteUrl.href, isPlaceholder: false };
       pivot.add(normalizer);
-      pivot.rotation.y = angle;
+      pivot.rotation.y = angle + orientation;
       parsed.traverse(child => {
         if (child.isMesh) {
           child.castShadow = true;
@@ -283,6 +309,8 @@ export async function createViewer(container, {
       parsed = null;
       scene.add(model);
       ready = true;
+      // A ready label means the first real frame has already been drawn.
+      renderer.render(scene, camera);
       setStatus('ready', '', '');
       canvas.setAttribute('aria-label', `${item.name}的真实三维模型，拖动或左右方向键旋转`);
       if (!reducedMotion) element.classList.add('qiwu-viewer-arrived');
@@ -290,8 +318,8 @@ export async function createViewer(container, {
     } catch (error) {
       if (parsed) releaseObject(parsed);
       if (disposed || request !== token || timedOut) return;
-      setStatus('error', error.missing ? '这件奇物的模型尚未到店' : '暂时没能加载模型',
-        `${item.name} · ${item.id}。${error.missing ? '团队模型文件待补齐；' : ''}重新加载会保留同一次抽取结果。`);
+      setStatus(error.missing ? 'missing' : 'error', error.missing ? '模型待补齐' : '暂时没能加载模型',
+        error.missing ? `${item.name} · ${item.id}` : '重新加载会保留同一次抽取结果。');
     } finally {
       if (request === token) clearTimeout(timeout);
     }
@@ -341,7 +369,7 @@ export async function createViewer(container, {
     if (inView) render();
   });
   intersectionObserver.observe(element);
-  void retry();
+  void retry(true);
 
   return {
     retry, setRotation,

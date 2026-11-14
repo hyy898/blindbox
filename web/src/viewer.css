@@ -11,6 +11,11 @@
 }
 .qiwu-viewer [hidden] { display: none !important; }
 .qiwu-viewer-canvas { display: block; width: 100%; height: 100%; min-height: inherit; touch-action: pan-y; outline-offset: -4px; }
+.qiwu-viewer-preview { position: absolute; width: min(76%, 440px); height: 76%; object-fit: contain; left: 50%; top: 42%; transform: translate(-50%, -50%); opacity: .65; pointer-events: none; }
+.qiwu-viewer[data-status="missing"] .qiwu-viewer-status { background: transparent; border: 0; box-shadow: none; gap: 7px; }
+.qiwu-viewer[data-status="missing"] .qiwu-viewer-status-mark { width: 54px; height: 43px; margin-bottom: 10px; border-color: #b7a58d; border-style: dashed; background: linear-gradient(90deg, transparent 44%, #ab877529 44% 57%, transparent 57%), #eee4d36b; transform: rotate(-6deg); }
+.qiwu-viewer[data-status="missing"] .qiwu-viewer-stage-label { bottom: 22px; }
+.qiwu-viewer[data-status="missing"] .qiwu-viewer-retry { border-color: transparent; text-decoration: underline; text-underline-offset: 3px; }
 .qiwu-viewer[data-status="ready"] .qiwu-viewer-canvas { cursor: grab; }
 .qiwu-viewer .qiwu-viewer-canvas.is-dragging { cursor: grabbing; }
 .qiwu-viewer-canvas:focus-visible { outline: 2px solid var(--viewer-accent); }

@@ -1,0 +1,112 @@
+{
+  "preview": "http://127.0.0.1:8785/",
+  "recording": {
+    "port": 8786,
+    "seed": 20261114,
+    "before": {
+      "coins": 500000,
+      "boxesOpened": 0
+    },
+    "after": {
+      "coins": 499900,
+      "boxesOpened": 1,
+      "itemId": "ms-03",
+      "showcase": 1
+    },
+    "capture": {
+      "viewport": [
+        1440,
+        900
+      ],
+      "frames": 13,
+      "type": "actual browser screenshot sequence",
+      "long_operator_pauses_capped_seconds": 1.2
+    }
+  },
+  "doubleClickAndSkip": {
+    "before": {
+      "coins": 497800,
+      "boxesOpened": 9
+    },
+    "after": {
+      "coins": 497700,
+      "boxesOpened": 10,
+      "pending": {
+        "uid": "u10",
+        "itemId": "ms-04"
+      }
+    },
+    "refresh": "same result",
+    "storedAgain": "u10 retained; no second charge"
+  },
+  "finalSharedPreviewSnapshot": {
+    "bailoutCount": 0,
+    "boxesOpened": 11,
+    "coins": 497600,
+    "coinsSpent": 2400,
+    "everOwned": {
+      "mf-02": true,
+      "ms-01": true,
+      "ms-02": true,
+      "ms-03": true,
+      "ms-04": true,
+      "ms-05": true,
+      "wa-03": true,
+      "wd-02": true
+    },
+    "pending": {
+      "itemId": "ms-05",
+      "preferredNew": false,
+      "rarity": "rare",
+      "seriesId": "midnight-snack",
+      "uid": "u11"
+    },
+    "showcase": {
+      "midnight-snack": {
+        "ms-01": true,
+        "ms-02": true,
+        "ms-03": true,
+        "ms-04": true,
+        "ms-05": true
+      },
+      "milk-frog": {
+        "mf-02": true
+      },
+      "weird-appliances": {
+        "wd-02": true
+      },
+      "working-animals": {
+        "wa-03": true
+      }
+    },
+    "storage": [
+      {
+        "itemId": "ms-04",
+        "preferredNew": true,
+        "rarity": "rare",
+        "seriesId": "midnight-snack",
+        "uid": "u3"
+      },
+      {
+        "itemId": "ms-04",
+        "preferredNew": false,
+        "rarity": "rare",
+        "seriesId": "midnight-snack",
+        "uid": "u10"
+      }
+    ],
+    "uidSeq": 12,
+    "won": false
+  },
+  "checks": {
+    "clientTests": 11,
+    "httpIntegrationChecks": 20,
+    "sourceEconomyChecks": 157,
+    "shippedHttpChecks": 73,
+    "rebuiltHttpChecks": 73,
+    "matchedSourceAndBinaryResponses": 330,
+    "modelsAvailable": 6,
+    "modelsMissing": 25,
+    "seriesPngs": 4
+  }
+}

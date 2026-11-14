@@ -1,0 +1,22 @@
+{
+  "method": "Built-in image generation; transparent PNG; decorative series art only",
+  "base": "Use case: stylized-concept. Asset type: transparent PNG series illustration placed inside a warm walnut shelf on the Chinese curiosity blind-box shop 奇物百货 homepage. Create one standalone charming small collectible illustration, NOT UI or a complete scene. A cohesive premium hand-painted storybook miniature style: softly sculpted volume, matte porcelain and painted clay feeling, delicate gouache brush texture, warm cream highlights, restrained burgundy and muted moss accents, cute but understated and slightly odd. Front view with very slight three-quarter depth, camera just above eye level, complete object centered occupying 78% of square canvas, no cropped extremities. Soft warm light from upper left, subtle contact shadow, readable clean silhouette against dark walnut when composited. Truly transparent background and alpha around subject. No shelf, no room, no frame, no base plaque, no words, no lettering, no logo, no watermark. Not SVG/vector/flat clip art, not a screenshot or mesh render. This is a decorative SERIES illustration, not a specific game prize. Subject: ",
+  "subjects": [
+    [
+      "midnight-snack",
+      "A sleepy triangular rice-ball character tucked into a dark moss-green nori blanket, gently leaning beside a tiny warm cream bowl, a little swirl of warm steam. Very rounded soft ivory rice texture, peaceful closed eyes, restrained rose cheeks; cozy midnight diner personality."
+    ],
+    [
+      "working-animals",
+      "A plump beige tabby office cat sitting upright, wearing a tiny burgundy necktie and an ivory shirt, holding a small closed tan work notebook, one blank cream ID badge. Mildly sleepy but earnest expression, tiny paws, elegant warm neutral colors. No readable badge markings."
+    ],
+    [
+      "weird-appliances",
+      "A small charming vintage cream television with a rounded burgundy casing border, short dark wooden feet, two tiny brass knobs and a bent antenna. Sleepy friendly eyes on the warm charcoal screen, one little cream hand sticking out to wave. Odd household appliance with personality, balanced compact silhouette."
+    ],
+    [
+      "milk-frog",
+      "A small family of two plump soft moss-green frog characters, one larger and one tiny, with warm creamy bellies, rounded heads and gentle dot eyes, the tiny frog leaning against the larger one. A single small muted green lily leaf beneath their feet. Natural cozy pond family, restrained warm colors."
+    ]
+  ]
+}
