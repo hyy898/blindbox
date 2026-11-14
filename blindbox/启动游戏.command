@@ -3,6 +3,10 @@
 set -u
 cd "$(dirname "$0")" || exit 1
 ROOT=$(pwd -P)
+# 奇物百货源码入口位于仓库根目录；保留下面的独立试玩包启动方式。
+if [ -f "$ROOT/../package.json" ] && [ -f "$ROOT/../web/index.html" ] && [ -f "$ROOT/../启动奇物百货.command" ]; then
+  exec /bin/bash "$ROOT/../启动奇物百货.command" "$@"
+fi
 case "$(uname -m)" in
   arm64) BIN=./blindbox-server-mac-arm64 ;;
   *)     BIN=./blindbox-server-mac-x64 ;;

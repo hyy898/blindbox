@@ -1,64 +1,7 @@
 <!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#f8f9f5" />
-  <title>开盲盒 · 你的快乐收藏社</title>
-  <style>#boot-msg{z-index:120;color:#30463b;text-align:center;background:#f8f9f5;flex-direction:column;justify-content:center;align-items:center;gap:14px;padding:24px;font-family:PingFang SC,Microsoft YaHei,sans-serif;display:flex;position:fixed;inset:0}#boot-msg h2{margin:0;font-size:21px}#boot-msg p{color:#788278;max-width:440px;margin:0;font-size:13px;line-height:1.8}body.ready #boot-msg{display:none}.boot-cube{font-size:36px;line-height:1.5}</style>
-  <script type="module" crossorigin src="./assets/index-CahP-Y7_.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/style-PVUgwD5N.css">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f4efe6"><title>奇物百货 · 把不寻常带回家</title><meta name="description" content="挑一盒，在柜台拆开，把不寻常的小物件摆进你的展柜。">  <script type="module" crossorigin src="./assets/index-C2IMDpx9.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-Bzrtrzh0.css">
 </head>
-<body>
-  <div id="boot-msg" role="status">
-    <div class="boot-cube" aria-hidden="true">◇</div>
-    <h2 id="boot-title">正在打开你的收藏世界</h2>
-    <p id="boot-sub">请通过「启动游戏」或「开发模式」打开，惊喜马上就来。</p>
-  </div>
-  <div id="app">
-    <header class="site-header">
-      <div class="header-inner">
-        <button class="brand" id="brand-home" type="button" aria-label="开盲盒，返回商店">
-          <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="m16 4 11 6-11 6L5 10l11-6Z" fill="currentColor" fill-opacity=".2"/><path d="m16 4 11 6v12l-11 6-11-6V10l11-6Zm0 12v12M5 10l11 6 11-6M10.5 7l11 6" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span>
-          <span class="brand-word">开盲盒<span>THE LITTLE BOX CLUB</span></span>
-        </button>
-        <nav class="tabs" aria-label="游戏导航">
-          <button type="button" data-tab="shop" class="active"><span data-icon="shop"></span>抽盲盒</button>
-          <button type="button" data-tab="storage"><span data-icon="storage"></span>仓库<span class="nav-count" id="storage-count">0</span></button>
-          <button type="button" data-tab="case"><span data-icon="grid"></span>展柜</button>
-        </nav>
-        <div class="header-tools">
-          <div class="wallet"><span class="wallet-symbol" data-icon="coin"></span><span><span class="wallet-label">可用金币</span><span id="coins" aria-live="polite">0</span></span></div>
-          <button class="reset-button" id="btn-reset" type="button" title="重置进度"><span data-icon="refresh"></span><span>重置进度</span></button>
-        </div>
-      </div>
-    </header>
-    <main id="main-content">
-      <section class="hero" id="shop-hero" aria-labelledby="hero-title">
-        <div class="hero-copy">
-          <span class="eyebrow"><span class="tiny-star">✳</span> SMALL BOX, BIG HAPPINESS</span>
-          <h1 id="hero-title">拆开小盒，<br>收集小小的<span>快乐。</span></h1>
-          <p>每一盒都是一个小世界。<br class="mobile-break">打开它，遇见你的下一位收藏。</p>
-          <div class="hero-actions"><button class="btn btn-primary" id="btn-explore" type="button">挑一个心动的盒子<span data-icon="arrow"></span></button><button class="text-button" data-nav="case" type="button">看看我的收藏<span data-icon="arrow"></span></button></div>
-        </div>
-        <div class="hero-visual">
-          <span class="hero-orbit" aria-hidden="true"></span>
-          <img class="hero-art" src="./assets/blindbox-hero-DVD2m9zy.png" alt="从盲盒里探头的小青蛙和它的收藏伙伴" fetchpriority="high" />
-          <span class="hero-note"><span class="note-star">✦</span><span><strong id="hero-total">—</strong> 款小伙伴<br><small>等你带回家</small></span></span>
-        </div>
-      </section>
-      <div class="page-frame">
-        <div class="status-strip"><div id="collection-info" aria-live="polite"></div><button class="text-button rules-trigger" id="btn-rules" type="button"><span data-icon="help"></span>开盒小指南</button></div>
-        <section id="panel-shop" class="panel" aria-label="盲盒商店"></section>
-        <section id="panel-storage" class="panel hidden" aria-label="我的仓库"></section>
-        <section id="panel-case" class="panel hidden" aria-label="收藏展柜"></section>
-      </div>
-    </main>
-    <footer class="site-footer"><span>给每一份小小的喜欢，留一个位置。</span><span class="footer-sign">COLLECT LITTLE JOYS <span>✳</span></span></footer>
-  </div>
-  <div id="toast" role="status"></div>
-  <dialog class="club-dialog" id="rules-dialog" aria-labelledby="rules-title"><button class="dialog-close" data-close-dialog="rules-dialog" type="button" aria-label="关闭指南"><span data-icon="close"></span></button><span class="eyebrow">A LITTLE GUIDE</span><h2 id="rules-title">拆盒之前，认识一下惊喜。</h2><div id="rules-content"></div><button class="btn btn-primary dialog-main-action" data-close-dialog="rules-dialog" type="button">知道啦，去找快乐</button></dialog>
-  <dialog class="club-dialog reset-dialog" id="reset-dialog" aria-labelledby="reset-title"><button class="dialog-close" data-close-dialog="reset-dialog" type="button" aria-label="关闭重置确认"><span data-icon="close"></span></button><span class="dialog-symbol" data-icon="refresh"></span><h2 id="reset-title">重新开启一份收藏？</h2><p>这会清空当前存档的金币和收藏进度，并按照最新的开局配置重新开始。</p><div class="dialog-actions"><button class="btn btn-secondary" data-close-dialog="reset-dialog" type="button">保留我的收藏</button><button class="btn btn-primary" id="reset-confirm" type="button">确认重置</button></div></dialog>
-  <div id="win-overlay" role="dialog" aria-modal="true" aria-labelledby="win-title"><div class="win-card"><div class="win-icon" data-icon="trophy"></div><span class="eyebrow">A COLLECTION FULL OF JOY</span><h2 id="win-title">小小的宇宙，终于集齐了。</h2><p id="win-stats"></p><p class="win-note">每一个角落，都装着你的喜欢。</p><button class="btn btn-primary" id="btn-win-close" type="button">回到我的收藏<span data-icon="arrow"></span></button></div></div>
-</body>
+<body><div id="app"><div class="boot"><span>奇</span><h1>奇物百货</h1><p>正在打开店门…</p></div></div><div id="toast" role="status" aria-live="polite"></div><dialog id="experience" aria-label="柜台开盒"></dialog><dialog id="guide" aria-label="店内说明"></dialog></body>
 </html>
