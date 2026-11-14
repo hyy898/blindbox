@@ -68,12 +68,14 @@
   pointer-events: none;
 }
 .qiwu-viewer-controls { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; gap: 10px; width: max-content; max-width: 100%; }
-.qiwu-viewer-controls > span { font-size: 10px; color: #8b7968; white-space: nowrap; }
+.qiwu-viewer-front { appearance: none; border: 0; background: transparent; color: #765f4c; font: inherit; font-size: 11px; min-height: 34px; padding: 4px 6px; cursor: pointer; white-space: nowrap; }
+.qiwu-viewer-front:hover { color: var(--viewer-accent); text-decoration: underline; text-underline-offset: 3px; }
+.qiwu-viewer-front:focus-visible, .qiwu-viewer-turn:focus-visible { outline: 2px solid var(--viewer-accent); outline-offset: 2px; }
 .qiwu-viewer-turn { appearance: none; width: 34px; height: 34px; border: 1px solid #cfbfaa; border-radius: 50%; color: #6d5144; background: #fffaf1bb; font-size: 22px; line-height: 1; cursor: pointer; }
 .qiwu-viewer-turn:hover { background: #fffaf1; }
-.qiwu-viewer-arrived .qiwu-viewer-canvas { animation: qiwu-model-arrive 0.5s ease-out both; }
+.qiwu-viewer-arrived .qiwu-viewer-canvas { animation: qiwu-model-arrive 0.35s ease-out both; }
 .qiwu-viewer[data-reduced-motion="true"] *, .qiwu-viewer[data-reduced-motion="true"] *::before { animation: none !important; transition: none !important; }
-@keyframes qiwu-model-arrive { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes qiwu-model-arrive { from { transform: translateY(6px); } to { transform: translateY(0); } }
 @keyframes qiwu-model-wait { 0%,100% { transform: rotate(-12deg); opacity: .4; } 50% { transform: rotate(12deg); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .qiwu-viewer *, .qiwu-viewer *::before { animation: none !important; transition: none !important; } }
 @media (max-width: 460px) { .qiwu-viewer-status { padding: 15px 12px; } .qiwu-viewer-status-title { font-size: 14px; } .qiwu-viewer-controls { gap: 7px; } }
@@ -83,6 +85,6 @@
   .qiwu-viewer-status-detail { font-size: 10px; line-height: 1.6; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
   .qiwu-viewer-retry { min-height: 34px; font-size: 10px; padding: 7px 9px; }
   .qiwu-viewer-controls { gap: 7px; }
-  .qiwu-viewer-controls > span { font-size: 0; }
-  .qiwu-viewer-controls > span::after { content: '拖动旋转'; font-size: 9px; }
+  .qiwu-viewer-front { font-size: 10px; padding: 4px 1px; }
+  .qiwu-viewer-turn { width: 30px; height: 30px; }
 }

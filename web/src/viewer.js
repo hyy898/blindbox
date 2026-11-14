@@ -77,7 +77,7 @@ function addStage(scene, theme) {
 
 /** A display-only viewer. Loading/retrying never calls the game or changes inventory. */
 export async function createViewer(container, {
-  item, modelUrl, theme = {}, rotation = 0, reducedMotion = false, onRotation = () => {},
+  item, modelUrl, theme = {}, rotation = 0, reducedMotion = false, onRotation = () => {}, onStatus = () => {},
   knownMissing = modelAssets[item.id]?.available === false,
   thumbnail = modelAssets[item.id]?.thumbnail,
   orientation = modelAssets[item.id]?.orientation || 0
@@ -99,7 +99,7 @@ export async function createViewer(container, {
     <span class="qiwu-viewer-stage-label"></span>
     <div class="qiwu-viewer-controls" hidden>
       <button class="qiwu-viewer-turn" type="button" data-turn="-1" aria-label="向左转动藏品">↶</button>
-      <span>拖动查看 · 方向键旋转</span>
+      <button class="qiwu-viewer-front" type="button" title="拖动藏品或使用左右方向键旋转，Home 键回到正面">回到正面</button>
       <button class="qiwu-viewer-turn" type="button" data-turn="1" aria-label="向右转动藏品">↷</button>
     </div>`;
   container.appendChild(element);
@@ -116,11 +116,12 @@ export async function createViewer(container, {
     preview = document.createElement('img');
     preview.className = 'qiwu-viewer-preview';
     preview.src = thumbnail;
-    preview.alt = `${item.name}的真实模型静态预览`;
+    preview.alt = `${item.name}的预览`;
     preview.addEventListener('error', () => { previewFailed = true; preview.hidden = true; }, { once: true });
     element.prepend(preview);
   }
-  element.querySelector('.qiwu-viewer-stage-label').textContent = theme.stage || theme.label || '奇物展台';
+  element.querySelector('.qiwu-viewer-stage-label').textContent = '';
+  element.querySelector('.qiwu-viewer-stage-label').hidden = true;
   let disposed = false;
   let token = 0;
   let controller = null;
@@ -136,6 +137,8 @@ export async function createViewer(container, {
   let scene = null;
   let camera = null;
   let ready = false;
+  let cameraInitialized = false;
+  let contextLost = false;
   const events = new AbortController();
 
   function setStatus(kind, title, detail) {
@@ -149,13 +152,34 @@ export async function createViewer(container, {
     if (preview) preview.hidden = kind === 'ready' || previewFailed;
     canvas.setAttribute('aria-busy', String(kind === 'loading'));
     canvas.tabIndex = kind === 'ready' ? 0 : -1;
+    onStatus(kind);
+  }
+
+  function paint() {
+    if (disposed || !renderer || !cameraInitialized || contextLost) return false;
+    if (element.clientWidth < 1 || element.clientHeight < 1) return false;
+    try {
+      renderer.render(scene, camera);
+      if (model && !ready && element.dataset.status === 'loading') {
+        ready = true;
+        canvas.setAttribute('aria-label', `${item.name}，拖动或左右方向键旋转`);
+        if (!reducedMotion) element.classList.add('qiwu-viewer-arrived');
+        // Consumers may begin their reveal only after an actual frame exists.
+        setStatus('ready', '', '');
+      }
+      return true;
+    } catch {
+      ready = false;
+      setStatus('error', '暂时无法显示藏品', '请重新加载，收藏状态不受影响。');
+      return false;
+    }
   }
 
   function render() {
     if (disposed || !renderer || !inView || frame) return;
     frame = requestAnimationFrame(() => {
       frame = 0;
-      if (!disposed && renderer && inView) renderer.render(scene, camera);
+      if (inView) paint();
     });
   }
 
@@ -164,15 +188,20 @@ export async function createViewer(container, {
     const width = element.clientWidth, height = element.clientHeight;
     if (width < 1 || height < 1) return;
     const ratio = renderer.getPixelRatio();
+    const sizeChanged = canvas.width !== Math.floor(width * ratio) || canvas.height !== Math.floor(height * ratio);
     // Reassigning canvas dimensions clears WebGL, even when the size is unchanged.
-    if (canvas.width === Math.floor(width * ratio) && canvas.height === Math.floor(height * ratio)) return;
-    renderer.setSize(width, height, false);
-    camera.aspect = width / height;
-    const distance = camera.aspect < 0.9 ? 5 / Math.max(camera.aspect, 0.6) : 5;
-    camera.position.set(0, 1.8, distance);
-    camera.lookAt(0, 0.65, 0);
-    camera.updateProjectionMatrix();
-    renderer.render(scene, camera);
+    if (sizeChanged) renderer.setSize(width, height, false);
+    // The initial DOM canvas size can already match its container. It still
+    // needs a correctly positioned camera before its first frame is exposed.
+    if (sizeChanged || !cameraInitialized) {
+      camera.aspect = width / height;
+      const distance = camera.aspect < 0.9 ? 5 / Math.max(camera.aspect, 0.6) : 5;
+      camera.position.set(0, 1.8, distance);
+      camera.lookAt(0, 0.65, 0);
+      camera.updateProjectionMatrix();
+      cameraInitialized = true;
+    }
+    paint();
   }
 
   function clearModel() {
@@ -181,6 +210,7 @@ export async function createViewer(container, {
     releaseObject(model);
     model = null;
     ready = false;
+    element.classList.remove('qiwu-viewer-arrived');
   }
 
   function setRotation(value) {
@@ -197,6 +227,10 @@ export async function createViewer(container, {
   }
 
   function initRenderer() {
+    if (contextLost) {
+      setStatus('error', '三维显示暂时中断', '等待浏览器恢复后，可重新加载这件藏品。');
+      return false;
+    }
     if (renderer) return true;
     try {
       // Keep the last on-demand frame available to WebKit compositing/snapshots.
@@ -230,6 +264,7 @@ export async function createViewer(container, {
       if (scene) releaseObject(scene);
       renderer?.dispose();
       renderer = null;
+      cameraInitialized = false;
       setStatus('error', '暂时无法显示 3D', '浏览器的三维显示尚未就绪。藏品结果和收藏不受影响。');
       return false;
     }
@@ -247,7 +282,7 @@ export async function createViewer(container, {
       setStatus('missing', '模型待补齐', `${item.name} · ${item.id}`);
       return;
     }
-    setStatus('loading', '正在取出这件奇物', '模型加载中，抽取结果已保留。');
+    setStatus('loading', '正在加载藏品', '请稍候，收藏状态已保留。');
     render();
     if (!initRenderer()) return;
     if (!modelUrl) {
@@ -308,13 +343,8 @@ export async function createViewer(container, {
       model = pivot;
       parsed = null;
       scene.add(model);
-      ready = true;
-      // A ready label means the first real frame has already been drawn.
-      renderer.render(scene, camera);
-      setStatus('ready', '', '');
-      canvas.setAttribute('aria-label', `${item.name}的真实三维模型，拖动或左右方向键旋转`);
-      if (!reducedMotion) element.classList.add('qiwu-viewer-arrived');
-      render();
+      // A hidden viewer stays loading until it has a visible frame.
+      resize();
     } catch (error) {
       if (parsed) releaseObject(parsed);
       if (disposed || request !== token || timedOut) return;
@@ -329,6 +359,11 @@ export async function createViewer(container, {
   element.querySelectorAll('[data-turn]').forEach(button => {
     button.addEventListener('click', () => turn(Number(button.dataset.turn) * 15 * DEG), { signal: events.signal });
   });
+  element.querySelector('.qiwu-viewer-front').addEventListener('click', () => {
+    if (!ready) return;
+    setRotation(0);
+    onRotation(0);
+  }, { signal: events.signal });
   canvas.addEventListener('keydown', event => {
     if (!ready || !['ArrowLeft', 'ArrowRight', 'Home'].includes(event.key)) return;
     event.preventDefault();
@@ -357,22 +392,57 @@ export async function createViewer(container, {
   }
   canvas.addEventListener('webglcontextlost', event => {
     event.preventDefault();
-    if (!disposed) setStatus('error', '三维显示暂时中断', '重新加载即可继续查看这件藏品。');
+    contextLost = true;
+    ready = false;
+    if (!disposed) setStatus('error', '三维显示暂时中断', '等待浏览器恢复后，可重新加载这件藏品。');
   }, { signal: events.signal });
   canvas.addEventListener('webglcontextrestored', () => {
+    contextLost = false;
     if (!disposed) retry();
   }, { signal: events.signal });
   resizeObserver = new ResizeObserver(resize);
   resizeObserver.observe(element);
   intersectionObserver = new IntersectionObserver(entries => {
     inView = entries[0]?.isIntersecting ?? true;
-    if (inView) render();
+    if (inView) resize();
   });
   intersectionObserver.observe(element);
   void retry(true);
 
   return {
     retry, setRotation,
+    getImage() {
+      if (!ready || !paint()) return null;
+      const exportRenderer = renderer;
+      const originalRatio = exportRenderer.getPixelRatio();
+      const originalSize = exportRenderer.getSize(new THREE.Vector2());
+      const longestSide = Math.max(originalSize.x, originalSize.y);
+      if (longestSide < 1) return null;
+      const exportRatio = Math.max(originalRatio, 1200 / longestSide);
+      try {
+        // Render extra pixels for the photograph without changing the CSS size,
+        // camera, or the user's chosen angle. This work is entirely synchronous.
+        exportRenderer.setPixelRatio(exportRatio);
+        exportRenderer.setSize(originalSize.x, originalSize.y, false);
+        exportRenderer.render(scene, camera);
+        if (exportRenderer.getContext().isContextLost()) return null;
+        return canvas.toDataURL('image/png');
+      } catch {
+        return null;
+      } finally {
+        if (!disposed && renderer === exportRenderer) {
+          try {
+            exportRenderer.setPixelRatio(originalRatio);
+            exportRenderer.setSize(originalSize.x, originalSize.y, false);
+            // Resizing clears WebGL. Restore the visible frame before yielding.
+            paint();
+          } catch {
+            ready = false;
+            setStatus('error', '暂时无法显示藏品', '请重新加载，收藏状态不受影响。');
+          }
+        }
+      }
+    },
     dispose() {
       if (disposed) return;
       disposed = true;

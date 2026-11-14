@@ -100,7 +100,7 @@ export async function createGame(base = new URL('./', location.href).href, optio
     // A dialog can outlive a sync. Bind writes to the displayed physical item,
     // rather than silently acting on a newer pending item in the client mirror.
     const entry = expectedEntry !== undefined ? clone(expectedEntry) : state.pending ? clone(state.pending) : null;
-    if (!entry) return Promise.resolve(failure('no-pending', '没有待安置的藏品。'));
+    if (!entry) return Promise.resolve(failure('no-pending', '没有待收纳的藏品。'));
     const key = pendingKey(entry);
     return mutate(path, body, latest => pendingKey(latest.pending) !== key ? staleResult() : null,
       (_before, latest) => {
@@ -130,7 +130,7 @@ export async function createGame(base = new URL('./', location.href).href, optio
       if (state.pending) return failure('pending', '请先安置已拆开的藏品。');
       const opened = state.boxesOpened;
       const result = await mutate('api/open', { seriesId }, latest => {
-        if (latest.pending) return failure('pending', '已有一件待安置藏品，继续查看即可。');
+        if (latest.pending) return failure('pending', '已有一件待收纳藏品，继续查看即可。');
         if (latest.boxesOpened !== opened) return staleResult();
         return null;
       }, (before, latest) => latest.pending?.seriesId === seriesId && latest.boxesOpened === before.boxesOpened + 1
