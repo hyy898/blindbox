@@ -1,3 +1,15 @@
+# Dependencies, private runtime, and local metadata
 node_modules/
 .local/
 .DS_Store
+/blindbox/server/build/
+/blindbox/server/blindbox-server
+/blindbox/blindbox-server.exe
+/blindbox/blindbox-server-mac-*
+# Original tracked databases remain untouched; never add new saves.
+/blindbox/data/
+/blindbox/models/README.txt
+.env
+.env.*
+!.env.example
+*.log
