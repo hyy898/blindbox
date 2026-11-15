@@ -81,7 +81,7 @@ code = '''/** Verified owner GLBs; this manifest describes files, never changes 
  * remain retryable in the viewer when the owner supplies them later.
  */
 export const modelAssets = Object.freeze(''' + json.dumps(assets, ensure_ascii=False, indent=2) + ');\n'
-(repo / 'web/src/assets.js').write_text(code)
+(repo / 'web/src/asset-previews.js').write_text(code)
 
 lines = ['# 奇物百货 V2 真实资源核对', '',
     '本清单以现行服务的 `--dump-config` 导出为藏品身份依据；模型来自 owner 提交 `0e83f6f`。检查未调用抽取接口，未修改任何游戏数据库。', '',

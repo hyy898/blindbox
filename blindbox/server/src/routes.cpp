@@ -20,6 +20,7 @@ namespace {
 
 void sendJson(httplib::Response& res, int status, const json& body) {
     res.status = status;
+    res.set_header("Cache-Control", "no-store");
     res.set_content(body.dump(), "application/json; charset=utf-8");
 }
 

@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { modelAssets } from './assets.js';
+import { modelAssets, resolveModelAsset } from './assets.js';
+import { createModelCache } from './model-cache.js';
+import { clone as cloneScene } from 'three/addons/utils/SkeletonUtils.js';
 import './viewer.css';
 
 const LOAD_TIMEOUT = 25000;
@@ -26,6 +28,42 @@ function releaseObject(object) {
   });
   materials.forEach(material => material.dispose());
   geometries.forEach(geometry => geometry.dispose());
+}
+
+const modelCache = createModelCache({dispose: releaseObject});
+async function loadModel(url, onProgress) {
+  const controller = new AbortController();
+  let expired = false, timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      expired = true; controller.abort();
+      reject(new Error('模型加载超时'));
+    }, LOAD_TIMEOUT);
+  });
+  const work = (async () => {
+    let source;
+    try {
+      const response = await fetch(url, {signal: controller.signal, cache: 'default'});
+      if (!response.ok) {
+        const error = new Error(`HTTP ${response.status}`);
+        error.missing = response.status === 404;
+        throw error;
+      }
+      const data = await response.arrayBuffer();
+      onProgress?.('正在准备三维显示');
+      const gltf = await new GLTFLoader().parseAsync(data, new URL('./', url).href);
+      source = gltf.scene || gltf.scenes[0];
+      if (!source) throw new Error('模型中没有场景');
+      if (expired) throw new Error('模型加载超时');
+      return source;
+    } catch(error) {
+      if(source) releaseObject(source);
+      throw error;
+    }
+  })();
+  // parseAsync is not abortable. Reject visibly on time, release any late scene.
+  try {return await Promise.race([work, timeout]);}
+  finally {clearTimeout(timer);}
 }
 
 function addStage(scene, theme) {
@@ -78,7 +116,7 @@ function addStage(scene, theme) {
 /** A display-only viewer. Loading/retrying never calls the game or changes inventory. */
 export async function createViewer(container, {
   item, modelUrl, theme = {}, rotation = 0, reducedMotion = false, onRotation = () => {}, onStatus = () => {},
-  knownMissing = modelAssets[item.id]?.available === false,
+  assetBase = new URL('./', location.href).href,
   thumbnail = modelAssets[item.id]?.thumbnail,
   orientation = modelAssets[item.id]?.orientation || 0
 }) {
@@ -124,9 +162,8 @@ export async function createViewer(container, {
   element.querySelector('.qiwu-viewer-stage-label').hidden = true;
   let disposed = false;
   let token = 0;
-  let controller = null;
-  let timeout = 0;
   let model = null;
+  let modelLease = null;
   let renderer = null;
   let frame = 0;
   let resizeObserver = null;
@@ -207,7 +244,8 @@ export async function createViewer(container, {
   function clearModel() {
     if (!model) return;
     scene.remove(model);
-    releaseObject(model);
+    modelLease?.release();
+    modelLease = null;
     model = null;
     ready = false;
     element.classList.remove('qiwu-viewer-arrived');
@@ -273,51 +311,28 @@ export async function createViewer(container, {
   async function retry(initial = false) {
     if (disposed) return;
     const request = ++token;
-    controller?.abort();
-    clearTimeout(timeout);
     clearModel();
-    // The manifest avoids 25 predictable 404s. A manual retry still checks the
-    // original URL, so newly supplied assets can appear without another draw.
-    if (initial === true && knownMissing) {
-      setStatus('missing', '模型待补齐', `${item.name} · ${item.id}`);
-      return;
-    }
-    setStatus('loading', '正在加载藏品', '请稍候，收藏状态已保留。');
+    setStatus('loading', '正在确认模型资源', '先显示预览，三维藏品准备好后自动出现。');
     render();
-    if (!initRenderer()) return;
-    if (!modelUrl) {
-      setStatus('missing', '模型待补齐', `${item.name} · ${item.id}`);
-      return;
-    }
-    const abort = new AbortController();
-    controller = abort;
-    let timedOut = false;
     let parsed = null;
-    timeout = setTimeout(() => {
-      if (disposed || request !== token) return;
-      timedOut = true;
-      abort.abort();
-      ++token;
-      setStatus('error', '模型加载超时', '可以重新加载同一件藏品，不会再次抽取或扣费。');
-    }, LOAD_TIMEOUT);
+    let lease = null;
     try {
-      const absoluteUrl = new URL(modelUrl, location.href);
-      const response = await fetch(absoluteUrl, { signal: abort.signal, cache: 'no-cache' });
-      if (!response.ok) {
-        const error = new Error(`HTTP ${response.status}`);
-        error.missing = response.status === 404;
-        throw error;
-      }
-      const data = await response.arrayBuffer();
+      const asset = await resolveModelAsset(item.id, assetBase, modelUrl);
       if (disposed || request !== token) return;
-      const loader = new GLTFLoader();
-      const gltf = await loader.parseAsync(data, new URL('./', absoluteUrl).href);
-      parsed = gltf.scene || gltf.scenes[0];
-      if (!parsed) throw new Error('模型中没有场景');
-      if (disposed || request !== token) {
-        releaseObject(parsed);
+      if (asset.available === false) {
+        setStatus('missing', '模型待补齐', `${item.name} · 文件尚未提供，可稍后检查更新。`);
         return;
       }
+      if (!initRenderer()) return;
+      const absoluteUrl = new URL(asset.url || modelUrl, assetBase);
+      setStatus('loading', '正在加载三维藏品', '首次查看需要准备模型，收藏状态已保留。');
+      const key = asset.version ? absoluteUrl.href : `${absoluteUrl.href}#uncached-${Date.now()}-${Math.random()}`;
+      lease = await modelCache.acquire(key, asset.bytes, () => loadModel(absoluteUrl.href, title => {
+        if(!disposed && request === token) statusTitle.textContent = title;
+      }));
+      if (!asset.version) modelCache.invalidate(key);
+      if (disposed || request !== token) { lease.release(); return; }
+      parsed = cloneScene(lease.value);
       parsed.updateMatrixWorld(true);
       const box = new THREE.Box3().setFromObject(parsed);
       const size = box.getSize(new THREE.Vector3());
@@ -341,17 +356,17 @@ export async function createViewer(container, {
         }
       });
       model = pivot;
+      modelLease = lease;
+      lease = null;
       parsed = null;
       scene.add(model);
       // A hidden viewer stays loading until it has a visible frame.
       resize();
     } catch (error) {
-      if (parsed) releaseObject(parsed);
-      if (disposed || request !== token || timedOut) return;
+      lease?.release();
+      if (disposed || request !== token) return;
       setStatus(error.missing ? 'missing' : 'error', error.missing ? '模型待补齐' : '暂时没能加载模型',
-        error.missing ? `${item.name} · ${item.id}` : '重新加载会保留同一次抽取结果。');
-    } finally {
-      if (request === token) clearTimeout(timeout);
+        error.missing ? `${item.name} · 文件尚未提供。` : '请重试；收藏状态不变，不会再次抽取或扣费。');
     }
   }
 
@@ -447,8 +462,6 @@ export async function createViewer(container, {
       if (disposed) return;
       disposed = true;
       ++token;
-      controller?.abort();
-      clearTimeout(timeout);
       cancelAnimationFrame(frame);
       events.abort();
       resizeObserver.disconnect();
