@@ -31,6 +31,7 @@
 #include "economy.h"
 #include "httplib.h"
 #include "routes.h"
+#include "model_assets.h"
 #include "simulate.h"
 #include "store.h"
 
@@ -238,7 +239,7 @@ int main(int argc, char** argv) {
     srv.set_file_extension_and_mimetype_mapping("json", "application/json; charset=utf-8");
 
     // 不允许通过网页下载存档、exe、脚本
-    srv.set_pre_routing_handler([](const httplib::Request& req, httplib::Response& res) {
+    srv.set_pre_routing_handler([&](const httplib::Request& req, httplib::Response& res) {
         const std::string& p = req.path;
         auto endsWith = [&](const char* suf) {
             std::string s(suf);
@@ -251,9 +252,14 @@ int main(int argc, char** argv) {
             res.set_content("404", "text/plain");
             return httplib::Server::HandlerResponse::Handled;
         }
+        // Intercept before static mounts, including --web directories containing models/.
+        if (p.rfind("/models/", 0) == 0 && (req.method == "GET" || req.method == "HEAD")) {
+            model_assets::serve(req, res, cfg, models);
+            return httplib::Server::HandlerResponse::Handled;
+        }
         return httplib::Server::HandlerResponse::Unhandled;
     });
-    // 模型和网页都不缓存：老板放新模型后刷新就能看到
+    // 网页保持不缓存；模型由前面的版本化处理器进行 ETag 校验。
     srv.set_file_request_handler([](const httplib::Request&, httplib::Response& res) {
         res.set_header("Cache-Control", "no-store");
     });
@@ -261,7 +267,7 @@ int main(int argc, char** argv) {
     registerRoutes(srv, app);
     BrowserSession browserSession(srv, opt.exitOnClose);
 
-    if (fs::exists(models)) srv.set_mount_point("/models", models.string());
+    model_assets::registerRoutes(srv, cfg, models);
     bool hasWeb = fs::exists(web / "index.html");
     if (hasWeb) srv.set_mount_point("/", web.string());
 
