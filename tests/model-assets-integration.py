@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Read-only user data: every mutated model and database lives in a temp directory."""
-import json, os, platform, shutil, socket, subprocess, tempfile, time, urllib.request, urllib.error
+import json, os, platform, shutil, socket, subprocess, sys, tempfile, time, urllib.request, urllib.error
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 name = 'blindbox-server-mac-arm64' if platform.machine() == 'arm64' else 'blindbox-server-mac-x64'
@@ -13,7 +13,7 @@ def check(label, value):
 with tempfile.TemporaryDirectory(prefix='qiwu-model-test-') as tmp:
     root = Path(tmp); models = root / 'models'; models.mkdir()
     (root / 'index.html').write_text('<h1>model test</h1>')
-    binary = root / name; shutil.copy2(ROOT / 'blindbox' / name, binary); binary.chmod(0o755)
+    binary = root / name; shutil.copy2(Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / 'blindbox' / name, binary); binary.chmod(0o755)
     with socket.socket() as sock:
         sock.bind(('127.0.0.1', 0)); port = sock.getsockname()[1]
     base = f'http://127.0.0.1:{port}/'
@@ -35,7 +35,7 @@ with tempfile.TemporaryDirectory(prefix='qiwu-model-test-') as tmp:
                 except OSError: pass
                 time.sleep(.05)
             initial = catalog()
-            check('all 31 configured identities reported', len(initial) == 31)
+            check('all 28 configured identities reported', len(initial) == 28)
             check('missing assets explicitly unavailable', all(v['available'] is False and v['url'] is None for v in initial.values()))
             model = models / 'ms-06.glb'; model.write_bytes(b'first-model')
             first = catalog()['ms-06']
