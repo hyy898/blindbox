@@ -66,6 +66,67 @@ async function loadModel(url, onProgress) {
   finally {clearTimeout(timer);}
 }
 
+let thumbnailRenderer = null;
+globalThis.addEventListener?.('pagehide', () => {
+  thumbnailRenderer?.dispose();
+  thumbnailRenderer?.forceContextLoss();
+  thumbnailRenderer = null;
+});
+
+/** Render the real model into a transparent card image, sharing detail-view loads. */
+export async function renderModelThumbnail({ item, asset, assetBase }) {
+  const absoluteUrl = new URL(asset.url || item.model || `models/${item.id}.glb`, assetBase);
+  const key = asset.version ? absoluteUrl.href : `${absoluteUrl.href}#uncached-${Date.now()}-${Math.random()}`;
+  const lease = await modelCache.acquire(key, asset.bytes, () => loadModel(absoluteUrl.href));
+  if (!asset.version) modelCache.invalidate(key);
+  let scene;
+  try {
+    if (thumbnailRenderer?.getContext().isContextLost()) {
+      thumbnailRenderer.dispose(); thumbnailRenderer = null;
+    }
+    if (!thumbnailRenderer) {
+      thumbnailRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true, powerPreference: 'low-power' });
+      thumbnailRenderer.setPixelRatio(1);
+      thumbnailRenderer.setSize(384, 384);
+      thumbnailRenderer.setClearColor(0, 0);
+      thumbnailRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+      thumbnailRenderer.toneMappingExposure = 1.15;
+    }
+    const renderer = thumbnailRenderer;
+    const parsed = cloneScene(lease.value);
+    parsed.updateMatrixWorld(true);
+    const bounds = new THREE.Box3().setFromObject(parsed);
+    const size = bounds.getSize(new THREE.Vector3()), center = bounds.getCenter(new THREE.Vector3());
+    const maximum = Math.max(size.x, size.y, size.z);
+    if (!Number.isFinite(maximum) || maximum <= 0) throw new Error('模型尺寸无效');
+    const scale = 1.75 / maximum;
+    const normalizer = new THREE.Group();
+    normalizer.add(parsed);
+    normalizer.scale.setScalar(scale);
+    normalizer.position.set(-center.x * scale, -bounds.min.y * scale, -center.z * scale);
+    const pivot = new THREE.Group();
+    pivot.add(normalizer);
+    pivot.rotation.y = Number(asset.orientation) || 0;
+    scene = new THREE.Scene();
+    scene.add(pivot, new THREE.HemisphereLight('#fff7e7', '#bba88c', 2.3));
+    const light = new THREE.DirectionalLight('#fff0da', 3.4);
+    light.position.set(-3.5, 5, 4.5); scene.add(light);
+    const fill = new THREE.DirectionalLight('#edf1f5', 1.5);
+    fill.position.set(4, 2, -2); scene.add(fill);
+    const camera = new THREE.PerspectiveCamera(30, 1, .1, 20);
+    camera.position.set(0, 1.3, 4.25); camera.lookAt(0, .85, 0);
+    renderer.render(scene, camera);
+    const blob = await new Promise(resolve => renderer.domElement.toBlob(resolve, 'image/png'));
+    if (!blob || renderer.getContext().isContextLost()) throw new Error('预览未能生成');
+    return blob;
+  } finally {
+    // Geometry and textures belong to the shared model lease, not the snapshot.
+    scene?.clear();
+    thumbnailRenderer?.renderLists.dispose();
+    lease.release();
+  }
+}
+
 function addStage(scene, theme) {
   const stage = new THREE.Group();
   stage.name = 'packaging-display-stage';

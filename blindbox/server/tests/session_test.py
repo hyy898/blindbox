@@ -97,7 +97,9 @@ def main():
             check('刷新宽限内重新连接不会退出', proc.poll() is None)
             check('没有网页定时器也保持连接，支持后台页', request(port, '/api/health')['ok'])
             close(refreshed); pages.remove(refreshed)
+            closed_at = time.monotonic()
             check('最后一个网页关闭后自动正常退出', proc.wait(timeout=12) == 0)
+            check('保留约 5 秒刷新宽限', 4.8 <= time.monotonic() - closed_at < 9)
             output = proc.stdout.read()
             check('自动退出有明确提示', '游戏网页已全部关闭' in output)
         finally:

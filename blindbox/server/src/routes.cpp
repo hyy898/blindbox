@@ -8,6 +8,7 @@
 //   · 所有规则都在服务器上判断，前端只负责显示
 #include "routes.h"
 
+#include <cmath>
 #include "httplib.h"
 
 namespace blindbox {
@@ -54,6 +55,88 @@ bool requireString(const json& body, const char* key, httplib::Response& res,
     }
     out = it->get<std::string>();
     return true;
+}
+
+bool saveParameters(const json& body, httplib::Response& res, int& slot,
+                    std::string& revision, bool manualOnly = false) {
+    if (!body.contains("slot") || !body["slot"].is_number_integer() ||
+        body["slot"] < (manualOnly ? 1 : 0) || body["slot"] > 3 ||
+        !body.contains("revision") || !body["revision"].is_string() ||
+        body["revision"].get<std::string>().size() > 64) {
+        sendError(res, 400, "bad_param", "存档位置或版本格式不正确。");
+        return false;
+    }
+    slot = body["slot"].get<int>();
+    revision = body["revision"].get<std::string>();
+    return true;
+}
+
+bool readPresentation(const json& body, httplib::Response& res, const GameConfig& cfg, json& out) {
+    out = {{"layout", json::array({nullptr, nullptr, nullptr})},
+           {"preferences", {{"muted", true}, {"reduced", false}}}};
+    if (!body.contains("presentation")) return true;
+    const auto& view = body["presentation"];
+    auto invalid = [&] {
+        sendError(res, 400, "bad_param", "展柜与偏好设置格式不正确。");
+        return false;
+    };
+    if (!view.is_object()) return invalid();
+    if (view.contains("layout")) {
+        const auto& layout = view["layout"];
+        if (!layout.is_array() || layout.size() != 3) return invalid();
+        for (size_t i = 0; i < layout.size(); ++i) {
+            const auto& item = layout[i];
+            if (item.is_null()) continue;
+            if (!item.is_object() || !item.contains("itemId") || !item["itemId"].is_string() ||
+                !cfg.findItem(item["itemId"].get<std::string>()) ||
+                !item.contains("rotation") || !item["rotation"].is_number()) return invalid();
+            double rotation = item["rotation"].get<double>();
+            if (!std::isfinite(rotation) || rotation < -180 || rotation > 180) return invalid();
+            out["layout"][i] = {{"itemId", item["itemId"]}, {"rotation", rotation}};
+        }
+    }
+    if (view.contains("preferences")) {
+        if (!view["preferences"].is_object()) return invalid();
+        for (const char* key : {"muted", "reduced"}) {
+            if (!view["preferences"].contains(key) || !view["preferences"][key].is_boolean()) return invalid();
+            out["preferences"][key] = view["preferences"][key];
+        }
+    }
+    return true;
+}
+
+bool compatibleSave(const SaveSlot& save, const GameConfig& cfg) {
+    auto valid = [&](const std::string& sid, const std::string& iid) {
+        auto it = cfg.seriesOfItem.find(iid);
+        return it != cfg.seriesOfItem.end() && it->second == sid;
+    };
+    for (const auto& [sid, ids] : save.state.showcase) {
+        if (!cfg.findSeries(sid)) return false;
+        for (const auto& iid : ids) if (!valid(sid, iid)) return false;
+    }
+    for (const auto& entry : save.state.storage) if (!valid(entry.seriesId, entry.itemId)) return false;
+    if (save.state.pending && !valid(save.state.pending->seriesId, save.state.pending->itemId)) return false;
+    for (const auto& iid : save.state.everOwned) if (!cfg.findItem(iid)) return false;
+    return true;
+}
+
+json saveJson(const SaveSlot& save, bool includeState = false) {
+    std::set<std::string> unique;
+    size_t count = save.state.storage.size() + (save.state.pending ? 1 : 0);
+    for (const auto& entry : save.state.storage) unique.insert(entry.itemId);
+    if (save.state.pending) unique.insert(save.state.pending->itemId);
+    for (const auto& [sid, ids] : save.state.showcase) {
+        count += ids.size();
+        unique.insert(ids.begin(), ids.end());
+    }
+    json result = {{"slot", save.slot}, {"name", save.name}, {"updatedAt", save.updatedAt},
+        {"revision", save.revision}, {"coins", save.state.coins}, {"boxesOpened", save.state.boxesOpened},
+        {"collectionCount", count}, {"uniqueCount", unique.size()}, {"hasPending", save.state.pending.has_value()}};
+    if (includeState) {
+        result["state"] = stateToJson(save.state);
+        result["presentation"] = save.presentation;
+    }
+    return result;
 }
 
 // ---------- 读档 → 执行操作 → 成功就存档 → 回复 ----------
@@ -115,6 +198,65 @@ void registerRoutes(httplib::Server& srv, AppContext& app) {
     // 读取存档（没有则自动新建）
     srv.Get("/api/state", [&](const httplib::Request&, httplib::Response& res) {
         withSave(app, res, [&](PlayerRow&) { return ActionResult::success(); });
+    });
+
+    // 三个手动存档位，以及最近一次读档前的自动备份（0）。
+    srv.Get("/api/saves", [&](const httplib::Request&, httplib::Response& res) {
+        std::lock_guard<std::mutex> lock(app.mu);
+        json saves = json::array();
+        for (const auto& save : app.store.listSlots()) saves.push_back(saveJson(save));
+        sendJson(res, 200, {{"ok", true}, {"saves", saves}});
+    });
+    srv.Get(R"(/api/saves/([0-3]))", [&](const httplib::Request& req, httplib::Response& res) {
+        std::lock_guard<std::mutex> lock(app.mu);
+        auto save = app.store.loadSlot(std::stoi(req.matches[1].str()));
+        if (!save) { sendError(res, 404, "save_not_found", "这个位置还没有存档。"); return; }
+        sendJson(res, 200, {{"ok", true}, {"save", saveJson(*save, true)}});
+    });
+    srv.Post("/api/saves/save", [&](const httplib::Request& req, httplib::Response& res) {
+        json body, presentation;
+        int slot;
+        std::string revision, name;
+        if (!parseBody(req, res, body) || !saveParameters(body, res, slot, revision, true) ||
+            !requireString(body, "name", res, name, 96) ||
+            !readPresentation(body, res, app.cfg, presentation)) return;
+        std::lock_guard<std::mutex> lock(app.mu);
+        auto save = app.store.writeSlot(slot, name, presentation, app.economy, revision);
+        if (!save) { sendError(res, 409, "save_changed", "这个存档已在其他页面修改，请重新查看后操作。"); return; }
+        sendJson(res, 200, {{"ok", true}, {"save", saveJson(*save)},
+            {"state", stateToJson(save->state)}, {"progress", app.economy.progressJson(save->state)}});
+    });
+    srv.Post("/api/saves/load", [&](const httplib::Request& req, httplib::Response& res) {
+        json body, presentation;
+        int slot;
+        std::string revision;
+        if (!parseBody(req, res, body) || !saveParameters(body, res, slot, revision) ||
+            !readPresentation(body, res, app.cfg, presentation)) return;
+        std::lock_guard<std::mutex> lock(app.mu);
+        auto target = app.store.loadSlot(slot);
+        if (!target) { sendError(res, 404, "save_not_found", "这个存档已删除，请选择其他存档。"); return; }
+        if (!compatibleSave(*target, app.cfg)) {
+            sendError(res, 409, "save_incompatible", "存档中有当前配置已移除的藏品，请恢复对应配置后再读档。");
+            return;
+        }
+        auto save = app.store.restoreSlot(slot, revision, presentation, app.economy);
+        if (!save) { sendError(res, 409, "save_changed", "这个存档已在其他页面修改，请重新查看后操作。"); return; }
+        sendJson(res, 200, {{"ok", true}, {"loadedSlot", slot}, {"presentation", save->presentation},
+            {"state", stateToJson(save->state)}, {"progress", app.economy.progressJson(save->state)}});
+    });
+    srv.Post("/api/saves/delete", [&](const httplib::Request& req, httplib::Response& res) {
+        json body;
+        int slot;
+        std::string revision;
+        if (!parseBody(req, res, body) || !saveParameters(body, res, slot, revision)) return;
+        std::lock_guard<std::mutex> lock(app.mu);
+        if (!app.store.deleteSlot(slot, revision)) {
+            sendError(res, 409, "save_changed", "这个存档已删除或更新，请重新查看后操作。");
+            return;
+        }
+        auto player = app.store.loadOrCreate(app.economy);
+        sendJson(res, 200, {{"ok", true}, {"deletedSlot", slot},
+            {"state", stateToJson(player.state)}, {"progress", app.economy.progressJson(player.state)}});
     });
 
     // 开盒：{ "seriesId": "midnight-snack" }
@@ -183,13 +325,18 @@ void registerRoutes(httplib::Server& srv, AppContext& app) {
         withSave(app, res, [&](PlayerRow& p) { return app.economy.bailout(p.state); });
     });
 
-    // 重置进度：回到新开局
-    srv.Post("/api/reset", [&](const httplib::Request&, httplib::Response& res) {
-        withSave(app, res, [&](PlayerRow& p) {
-            p.state = app.economy.newPlayer();
-            return ActionResult::success();
-        });
-    });
+    // 新开局：原子备份当前进度，保留所有手动存档位。
+    auto newGame = [&](const httplib::Request& req, httplib::Response& res) {
+        json body, presentation;
+        if (!parseBody(req, res, body) || !readPresentation(body, res, app.cfg, presentation)) return;
+        std::lock_guard<std::mutex> lock(app.mu);
+        auto state = app.store.resetProgress(app.economy, presentation);
+        presentation["layout"] = json::array({nullptr, nullptr, nullptr});
+        sendJson(res, 200, {{"ok", true}, {"reset", true}, {"presentation", presentation},
+            {"state", stateToJson(state)}, {"progress", app.economy.progressJson(state)}});
+    };
+    srv.Post("/api/saves/new", newGame);
+    srv.Post("/api/reset", newGame); // 兼容旧接口；新前端使用专用路径以识别旧服务。
 
     // ---------------- 其他 /api 路径一律 404 ----------------
     srv.set_error_handler([](const httplib::Request& req, httplib::Response& res) {

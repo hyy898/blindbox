@@ -6,11 +6,17 @@ import { themeFor, esc, motif, boxMarkup } from './themes.js';
 import { renderStorefront, collectibleArt, boxPosition } from './storefront.js';
 import { modelAssets, refreshModelAssets } from './assets.js';
 import { renderCabinet } from './cabinet.js';
+import { startBrowserSession } from './session.js';
+import { openSaveManager } from './saves.js';
+import { startOpeningSequence } from './opening.js';
+import { bindCollectionPreviews } from './collection-previews.js';
 const $ = (q,el=document)=>el.querySelector(q);
 const fmt = n=>new Intl.NumberFormat('zh-CN').format(n);
 const percent = n=>new Intl.NumberFormat('zh-CN',{style:'percent',maximumFractionDigits:2}).format(n);
 const app=$('#app'), dialog=$('#experience');
-let game, page='shop', selected, picked=1, busy=false, dialogToken=0, animationTimer, viewer, shelves=[], activeEntry, entryMode, lastFocus, selectedSlot=null, experiencePhase='closed';
+startBrowserSession(new URL('./', location.href).href);
+let game, page='shop', selected, picked=1, busy=false, dialogToken=0, openingSequence, viewer, shelves=[], activeEntry, entryMode, lastFocus, selectedSlot=null, experiencePhase='closed';
+let disposePreviews=()=>{};
 const safeRead=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}};
 const prefs=safeRead('qiwu-preferences',{muted:true,reduced:matchMedia('(prefers-reduced-motion: reduce)').matches});
 let layout=safeRead('qiwu-display-v1',[null,null,null]);
@@ -24,9 +30,26 @@ function ownEntries(){const st=game.getState();const entries=st.storage.map(e=>(
 function possessed(){return new Set(ownEntries().map(e=>e.itemId));}
 function setBusy(value){busy=value;document.querySelectorAll('[data-write]').forEach(b=>b.disabled=value||b.dataset.locked==='true');}
 function sound(id){if(prefs.muted)return;try{const ctx=new (window.AudioContext||window.webkitAudioContext)();const osc=ctx.createOscillator(),gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.type=id==='weird-appliances'?'triangle':'sine';osc.frequency.setValueAtTime(themeFor(id).frequency,ctx.currentTime);osc.frequency.exponentialRampToValueAtTime(170,ctx.currentTime+.23);gain.gain.setValueAtTime(.045,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.3);osc.start();osc.stop(ctx.currentTime+.3);osc.onended=()=>ctx.close();}catch{}}
-function header(){const st=game.getState();return `<header class="header"><button class="brand" data-nav="shop" aria-label="奇物百货，回到店内"><span class="brand-stamp">奇</span><span>奇物百货</span></button><nav aria-label="主导航">${[['shop','店内'],['collection','我的收藏'],['case','我的展柜']].map(([id,label])=>`<button data-nav="${id}" ${page===id?'aria-current="page"':''}>${label}${id==='collection'?`<span class="nav-number">${ownEntries().length}</span>`:''}</button>`).join('')}</nav><div class="header-end"><span class="wallet"><i>◉</i><span><small>可用金币</small><b>${fmt(st.coins)}</b></span></span><button class="icon-button" id="settings" aria-label="偏好与店内说明">☷</button></div></header>`;}
+function openSaves(){
+  if(busy){toast('正在保存这次操作，请稍候。');return;}
+  const applyPresentation=view=>{
+    closeExperience();selectedSlot=null;
+    layout=Array.isArray(view?.layout)?view.layout.map(slot=>slot&&game.index.byId[slot.itemId]?{itemId:slot.itemId,rotation:Number(slot.rotation)||0}:null):[null,null,null];
+    if(view?.preferences){prefs.muted=!!view.preferences.muted;prefs.reduced=!!view.preferences.reduced;}
+    persist('qiwu-display-v1',layout);persist('qiwu-preferences',prefs);render();
+  };
+  openSaveManager({game,toast,onStateChange:render,onLoad:applyPresentation,
+    getPresentation:()=>({layout:validLayout(),preferences:{muted:!!prefs.muted,reduced:!!prefs.reduced}}),
+    onNewGame:view=>{
+      page='shop';picked=1;selected=game.data.series[0].id;
+      applyPresentation(view);
+      window.scrollTo({top:0,behavior:'instant'});
+    }
+  });
+}
+function header(){const st=game.getState();return `<header class="header"><button class="brand" data-nav="shop" aria-label="奇物百货，回到店内"><span class="brand-stamp">奇</span><span>奇物百货</span></button><nav aria-label="主导航">${[['shop','店内'],['collection','我的收藏'],['case','我的展柜']].map(([id,label])=>`<button data-nav="${id}" ${page===id?'aria-current="page"':''}>${label}${id==='collection'?`<span class="nav-number">${ownEntries().length}</span>`:''}</button>`).join('')}</nav><div class="header-end"><span class="wallet"><i>◉</i><span><small>可用金币</small><b>${fmt(st.coins)}</b></span></span><button class="save-entry" id="save-game" aria-label="存档、读档与删除存档">存档</button><button class="icon-button" id="settings" aria-label="偏好与店内说明">☷</button></div></header>`;}
 function pendingBar(){return game.getPending()?`<div class="pending-bar"><span>柜台还有一件藏品待收纳。</span><button class="text-link" id="resume">继续查看 →</button></div>`:'';}
-function render(){shelves.forEach(v=>v.dispose());shelves=[];document.documentElement.dataset.reduced=prefs.reduced;app.innerHTML=header()+`<main id="main">${pendingBar()}${page==='shop'?shop():page==='collection'?collection():showcase()}</main><footer class="footer"><span><b>奇物百货</b></span><button class="text-link" id="rules">店内说明 ↗</button></footer>`;app.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>navigate(b.dataset.nav));$('#settings').onclick=()=>openGuide();$('#rules').onclick=()=>openGuide();if($('#resume'))$('#resume').onclick=()=>showResult(game.getPending(),'pending');if(page==='shop')bindShop();if(page==='collection')bindCollection();if(page==='case')bindCase();}
+function render(){disposePreviews();shelves.forEach(v=>v.dispose());shelves=[];document.documentElement.dataset.reduced=prefs.reduced;app.innerHTML=header()+`<main id="main">${pendingBar()}${page==='shop'?shop():page==='collection'?collection():showcase()}</main><footer class="footer"><span><b>奇物百货</b></span><button class="text-link" id="rules">店内说明 ↗</button></footer>`;app.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>navigate(b.dataset.nav));$('#save-game').onclick=openSaves;$('#settings').onclick=()=>openGuide();$('#rules').onclick=()=>openGuide();if($('#resume'))$('#resume').onclick=()=>showResult(game.getPending(),'pending');if(page==='shop')bindShop();if(page==='collection')bindCollection();if(page==='case')bindCase();disposePreviews=bindCollectionPreviews(app,{index:game.index,base:game.server});}
 function navigate(next){closeExperience();selectedSlot=null;page=next;render();window.scrollTo({top:0,behavior:prefs.reduced?'instant':'smooth'});}
 function shop(){return renderStorefront({series:game.data.series,selected,picked,state:game.getState(),entries:ownEntries(),index:game.index,slots:validLayout(),busy});}
 function selectBox(index) {
@@ -145,7 +168,7 @@ function bindCase(){
   });
 }
 function startDialog(){lastFocus=document.activeElement;closeExperience(false);dialogToken++;dialog.showModal();dialog.scrollTop=0;return dialogToken;}
-function closeExperience(restore=true){experiencePhase='closed';clearTimeout(animationTimer);dialogToken++;viewer?.dispose();viewer=null;dialog.close();dialog.innerHTML='';activeEntry=null;if(restore&&lastFocus?.isConnected)lastFocus.focus();}
+function closeExperience(restore=true){experiencePhase='closed';openingSequence?.dispose();openingSequence=null;dialogToken++;viewer?.dispose();viewer=null;dialog.close();dialog.innerHTML='';activeEntry=null;if(restore&&lastFocus?.isConnected)lastFocus.focus();}
 dialog.addEventListener('cancel',e=>{e.preventDefault();closeExperience();if(page!=='case')render();});
 function dialogTop(label){return `<div class="dialog-top"><span><b class="mini-stamp">奇</b> ${label}</span><button class="close-button" id="close-experience" aria-label="收起，保留当前结果">×</button></div>`;}
 function bindClose(){$('#close-experience').onclick=()=>{closeExperience();if(page!=='case')render();};}
@@ -198,13 +221,17 @@ function resultDetails(entry,mode){
     ${mode==='pending'?'<p class="result-footnote">结果已保存，收起后可继续收纳。</p>':''}`;
 }
 function bindResult(entry,mode){
-  if($('#place'))$('#place').onclick=()=>placeEntry(entry,mode);
-  if($('#store'))$('#store').onclick=()=>storeEntry(entry,false);
-  if($('#again'))$('#again').onclick=()=>storeEntry(entry,true);
-  if($('#see-collection'))$('#see-collection').onclick=()=>navigate('collection');
-  if($('#go-case'))$('#go-case').onclick=()=>navigate('case');
-  if($('#sell'))$('#sell').onclick=()=>sellEntry(entry,game.index.byId[entry.itemId]);
-  if($('#unshowcase'))$('#unshowcase').onclick=()=>mutate(()=>game.unshowcase(entry.seriesId,entry.itemId),'已入收藏',()=>navigate('collection'));
+  const act=action=>()=>{
+    if(busy||game.isBusy())return;
+    return openingSequence?openingSequence.run(action):action();
+  };
+  if($('#place'))$('#place').onclick=act(()=>placeEntry(entry,mode));
+  if($('#store'))$('#store').onclick=act(()=>storeEntry(entry,false));
+  if($('#again'))$('#again').onclick=act(()=>storeEntry(entry,true));
+  if($('#see-collection'))$('#see-collection').onclick=act(()=>navigate('collection'));
+  if($('#go-case'))$('#go-case').onclick=act(()=>navigate('case'));
+  if($('#sell'))$('#sell').onclick=act(()=>sellEntry(entry,game.index.byId[entry.itemId]));
+  if($('#unshowcase'))$('#unshowcase').onclick=act(()=>mutate(()=>game.unshowcase(entry.seriesId,entry.itemId),'已入收藏',()=>navigate('collection')));
   setBusy(busy);
 }
 async function loadResultViewer(entry,token,onStatus=()=>{}){
@@ -214,29 +241,29 @@ async function loadResultViewer(entry,token,onStatus=()=>{}){
   catch{if(container.isConnected){container.innerHTML='<div class="viewer-fallback" role="status"><p>暂时无法显示藏品，结果已保存。</p><button class="secondary" id="retry-viewer">重新加载</button></div>';$('#retry-viewer').onclick=()=>loadResultViewer(entry,token,onStatus);onStatus('error');}}
 }
 function playOpening(entry){
-  clearTimeout(animationTimer);experiencePhase='opening';activeEntry={...entry};entryMode='pending';
-  const token=dialogToken;let elapsed=prefs.reduced,settled=false,finished=false;
+  openingSequence?.dispose();experiencePhase='opening';activeEntry={...entry};entryMode='pending';
+  const token=dialogToken;
   dialog.classList.remove('phase-seal');dialog.classList.add('phase-opening');
   $('#tear-track')?.remove();
-  $('.result-details').className='result-details reveal-waiting';
-  $('.result-details').innerHTML='<p role="status">正在拆封…</p><button class="text-link" id="skip">跳过动画 →</button>';
   const finish=()=>{
-    if(finished||token!==dialogToken||!dialog.open)return;
-    finished=true;clearTimeout(animationTimer);experiencePhase='result';
+    experiencePhase='result';
     dialog.classList.remove('phase-opening');dialog.classList.add('phase-revealed');
-    $('.dialog-top > span').innerHTML='<b class="mini-stamp">奇</b> 藏品详情';
     $('.flow-package')?.remove();
-    $('.result-details').className='result-details';
-    $('.result-details').innerHTML=resultDetails(entry,'pending');bindResult(entry,'pending');
+    $('#skip')?.remove();
   };
-  $('#skip').onclick=finish;
-  // The viewer starts as soon as the saved result exists, behind the opening lid.
-  void loadResultViewer(entry,token,kind=>{
-    if(token!==dialogToken)return;
-    settled=kind!=='loading';dialog.dataset.modelStatus=kind;
-    if(elapsed&&settled)finish();
+  openingSequence=startOpeningSequence({element:$('.flow-package'),reducedMotion:prefs.reduced,
+    isActive:()=>token===dialogToken&&dialog.open,
+    startViewer:report=>loadResultViewer(entry,token,report),
+    onModelStatus:kind=>{dialog.dataset.modelStatus=kind;},
+    onReveal:()=>{
+      $('.dialog-top > span').innerHTML='<b class="mini-stamp">奇</b> 藏品详情';
+      $('.result-details').className='result-details';
+      $('.result-details').innerHTML=resultDetails(entry,'pending')+'<button class="text-link" id="skip">跳过动画 →</button>';
+      bindResult(entry,'pending');
+      $('#skip').onclick=()=>openingSequence?.skip();
+    },
+    onFinish:finish
   });
-  animationTimer=setTimeout(()=>{elapsed=true;if(settled)finish();else $('.reveal-waiting p')?.replaceChildren(document.createTextNode('正在加载这件藏品…'));},prefs.reduced?0:2800);
 }
 async function showResult(entry,mode){
   if(!entry)return;const token=startDialog();experiencePhase='result';activeEntry={...entry};entryMode=mode;
@@ -249,6 +276,6 @@ async function mutate(action,message,done){if(busy)return;setBusy(true);try{cons
 async function storeEntry(entry,again){let stored=false;await mutate(()=>game.toStorage(entry),'已入收藏',()=>{stored=true;closeExperience();page=again?'shop':'collection';});if(stored&&again)showSeal();}
 async function placeEntry(entry,mode){await mutate(async()=>{if(mode==='storage'){const reopened=await game.reopen(entry.uid);if(!reopened.ok)return reopened;return game.toShowcase(reopened.entry);}return game.toShowcase(entry);},'已在展柜',()=>{layout=validLayout();const free=layout.findIndex(s=>!s);if(free>=0){layout[free]={itemId:entry.itemId,rotation:0};persist('qiwu-display-v1',layout);}else toast('已在展柜，选择一个位置摆放。');closeExperience();page='case';selectedSlot=free>=0?free:0;});}
 function sellEntry(entry,item){const actions=$('.result-actions');actions.innerHTML=`<p class="sell-confirm">确认将「${esc(item.name)}」售回店里？这件实物会离开仓库，获得 ${fmt(item.sellPrice)} 金币。</p><button class="secondary" id="cancel-sell">保留这件藏品</button><button class="primary" data-write id="confirm-sell">确认售回</button>`;$('#cancel-sell').onclick=()=>showResult(entry,'storage');$('#confirm-sell').onclick=()=>mutate(()=>game.sellFromStorage(entry.uid),'已售回店里',()=>navigate('collection'));}
-function openGuide(seriesId){const el=$('#guide');const list=seriesId?game.data.series.filter(s=>s.id===seriesId):game.data.series;el.innerHTML=`<div class="dialog-top"><span><b class="mini-stamp">奇</b> 店内说明</span><button class="close-button" id="close-guide" aria-label="关闭店内说明">×</button></div><div class="guide-body"><h2>${seriesId?'款式与概率':'店内说明'}</h2><div class="preferences"><button id="mute" class="secondary" aria-pressed="${prefs.muted}">${prefs.muted?'声音：已静音':'声音：已开启'}</button><button id="reduce" class="secondary" aria-pressed="${prefs.reduced}">${prefs.reduced?'减少动效：开启':'减少动效：关闭'}</button></div><p>每盒独立抽取，没有连续次数保底。同稀有度内优先抽到从未拥有的款式；全部拥有过后恢复完整候选池。展柜同款最多一件，重复款仍可保存在仓库。</p>${list.map(s=>`<section class="odds-section"><h3>${esc(s.name)} <small>${fmt(s.boxPrice)} 金币 / 盒</small></h3><div class="odds-summary">${Object.entries(s.dropRates).map(([key,chance])=>`<span>${esc(game.data.rarities[key].label)} <b>${percent(chance)}</b></span>`).join('')}</div><details ${seriesId?'open':''}><summary>查看 ${s.items.length} 款藏品与基础概率</summary><ul>${s.items.map(it=>`<li><span>${esc(it.name)} <small>${esc(game.data.rarities[it.rarity].label)}</small></span><b>${percent(it.drawChance)}</b></li>`).join('')}</ul></details></section>`).join('')}<p class="resource-note">已有 ${Object.values(modelAssets).filter(a=>a.available).length} 款可转动查看，${Object.values(modelAssets).filter(a=>a.available===false).length} 款仍待补齐。</p><p>金币不足且仓库没有可售藏品时，可获得金币补助。存档保存在本机，陈列位置与朝向保存在当前浏览器。</p><button class="secondary" id="refresh-state">重新读取本机存档</button></div>`;el.showModal();$('#close-guide').onclick=()=>el.close();$('#mute').onclick=()=>{prefs.muted=!prefs.muted;persist('qiwu-preferences',prefs);$('#mute').textContent=prefs.muted?'声音：已静音':'声音：已开启';$('#mute').setAttribute('aria-pressed',prefs.muted);if(!prefs.muted)sound(selected);};$('#reduce').onclick=()=>{prefs.reduced=!prefs.reduced;persist('qiwu-preferences',prefs);document.documentElement.dataset.reduced=prefs.reduced;$('#reduce').textContent=prefs.reduced?'减少动效：开启':'减少动效：关闭';$('#reduce').setAttribute('aria-pressed',prefs.reduced);};$('#refresh-state').onclick=async()=>{const r=await game.refresh();toast(r.ok?'已重新读取保存的进度':r.message);if(r.ok){await refreshModelAssets(game.server);el.close();render();}};}
+function openGuide(seriesId){const el=$('#guide');const list=seriesId?game.data.series.filter(s=>s.id===seriesId):game.data.series;el.innerHTML=`<div class="dialog-top"><span><b class="mini-stamp">奇</b> 店内说明</span><button class="close-button" id="close-guide" aria-label="关闭店内说明">×</button></div><div class="guide-body"><h2>${seriesId?'款式与概率':'店内说明'}</h2><div class="preferences"><button id="mute" class="secondary" aria-pressed="${prefs.muted}">${prefs.muted?'声音：已静音':'声音：已开启'}</button><button id="reduce" class="secondary" aria-pressed="${prefs.reduced}">${prefs.reduced?'减少动效：开启':'减少动效：关闭'}</button></div><p>每盒独立抽取，没有连续次数保底。同稀有度内优先抽到从未拥有的款式；全部拥有过后恢复完整候选池。展柜同款最多一件，重复款仍可保存在仓库。</p>${list.map(s=>`<section class="odds-section"><h3>${esc(s.name)} <small>${fmt(s.boxPrice)} 金币 / 盒</small></h3><div class="odds-summary">${Object.entries(s.dropRates).map(([key,chance])=>`<span>${esc(game.data.rarities[key].label)} <b>${percent(chance)}</b></span>`).join('')}</div><details ${seriesId?'open':''}><summary>查看 ${s.items.length} 款藏品与基础概率</summary><ul>${s.items.map(it=>`<li><span>${esc(it.name)} <small>${esc(game.data.rarities[it.rarity].label)}</small></span><b>${percent(it.drawChance)}</b></li>`).join('')}</ul></details></section>`).join('')}<p class="resource-note">已有 ${Object.values(modelAssets).filter(a=>a.available).length} 款可转动查看，${Object.values(modelAssets).filter(a=>a.available===false).length} 款仍待补齐。</p><p>金币不足且仓库没有可售藏品时，可获得金币补助。当前进度自动保存在本机，也可以手动保存三个存档。手动存档会一起记录展柜摆放与偏好，读档前会保留一份备份。</p><button class="secondary" id="manage-saves">管理存档与读档</button><button class="text-link" id="refresh-state">重新同步当前进度 →</button></div>`;el.showModal();$('#close-guide').onclick=()=>el.close();$('#manage-saves').onclick=()=>{el.close();openSaves();};$('#mute').onclick=()=>{prefs.muted=!prefs.muted;persist('qiwu-preferences',prefs);$('#mute').textContent=prefs.muted?'声音：已静音':'声音：已开启';$('#mute').setAttribute('aria-pressed',prefs.muted);if(!prefs.muted)sound(selected);};$('#reduce').onclick=()=>{prefs.reduced=!prefs.reduced;persist('qiwu-preferences',prefs);document.documentElement.dataset.reduced=prefs.reduced;$('#reduce').textContent=prefs.reduced?'减少动效：开启':'减少动效：关闭';$('#reduce').setAttribute('aria-pressed',prefs.reduced);};$('#refresh-state').onclick=async()=>{const r=await game.refresh();toast(r.ok?'已重新读取保存的进度':r.message);if(r.ok){await refreshModelAssets(game.server);el.close();render();}};}
 async function boot(){try{game=await createGame(new URL('./',location.href).href);await refreshModelAssets(game.server);selected=game.data.series[0].id;render();const r=await game.maybeBailout();if(r){toast(`金币补助 +${fmt(r)} 金币`);render();}}catch(error){app.innerHTML=`<div class="boot"><span>奇</span><h1>店门暂时没打开</h1><p>未能连接本机游戏服务。请通过「启动奇物百货」重新打开。</p><button class="secondary" id="retry-boot">重新连接</button><small>${esc(error.message)}</small></div>`;$('#retry-boot').onclick=boot;}}
 boot();

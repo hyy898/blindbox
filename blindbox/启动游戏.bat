@@ -2,6 +2,10 @@
 chcp 65001 >nul
 setlocal EnableExtensions DisableDelayedExpansion
 cd /d "%~dp0"
+if exist "..\启动奇物百货.bat" if exist "..\web\index.html" (
+  call "..\启动奇物百货.bat" %*
+  exit /b
+)
 set "WEB=%~dp0."
 if exist "dist\index.html" set "WEB=%~dp0dist"
 if exist "web\index.html" (

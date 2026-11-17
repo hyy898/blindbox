@@ -79,7 +79,7 @@ void BrowserSession::watch() {
     while (!finished_) {
         if (clients_ != 0) { changed_.wait(lock); continue; }
         // 允许刷新、跳转后返回和 EventSource 自动重连；没有打开网页时也不常驻后台。
-        auto deadline = connectedOnce_ ? lastClosed_ + std::chrono::seconds(4)
+        auto deadline = connectedOnce_ ? lastClosed_ + std::chrono::seconds(5)
                                       : started_ + std::chrono::seconds(90);
         if (Clock::now() < deadline || !server_.is_running()) {
             changed_.wait_until(lock, deadline);

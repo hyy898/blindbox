@@ -1,5 +1,22 @@
 {
-  "name": "qiwu-blindbox", "version": "1.0.0", "private": true, "type": "module",
-  "scripts": {"dev":"vite --host 127.0.0.1", "build":"vite build", "start":"node scripts/start.mjs", "test":"node --test tests/*.test.mjs", "test:api":"python3 tests/server-integration.py"},
-  "dependencies":{"three":"0.180.0"}, "devDependencies":{"vite":"7.1.12"}
+  "name": "qiwu-blindbox",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "start": "node scripts/start.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "test:api": "node scripts/test-native.mjs api",
+    "test:saves": "node scripts/test-native.mjs saves",
+    "test:session": "node scripts/test-native.mjs session",
+    "test:start": "python3 tests/start-integration.py"
+  },
+  "dependencies": {
+    "three": "0.180.0"
+  },
+  "devDependencies": {
+    "vite": "7.1.12"
+  }
 }

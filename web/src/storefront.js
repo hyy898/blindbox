@@ -1,13 +1,8 @@
-import { esc, motif, boxMarkup, themeFor } from './themes.js';
-import { modelAssets } from './assets.js';
+import { esc, boxMarkup, themeFor } from './themes.js';
+import { collectibleArt } from './collection-previews.js';
+export { collectibleArt } from './collection-previews.js';
 import './storefront.css';
 const fmt = n => new Intl.NumberFormat('zh-CN').format(n);
-export function collectibleArt(item, series) {
-  const asset = modelAssets[item.id];
-  return asset?.available && asset.thumbnail
-    ? `<img class="collectible-thumb" src="${asset.thumbnail}" alt="${esc(item.name)}的藏品预览" loading="lazy">`
-    : `<span class="catalog-icon">${motif(series.id)}</span>`;
-}
 export function boxPosition(index, picked) {
   if (index === picked) return 'center';
   return [0, 1, 2].filter(i => i !== picked).indexOf(index) === 0 ? 'left' : 'right';

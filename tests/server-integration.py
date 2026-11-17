@@ -12,6 +12,7 @@ import platform
 import shutil
 import socket
 import subprocess
+import sys
 import tempfile
 import time
 import urllib.error
@@ -24,6 +25,7 @@ name = 'blindbox-server.exe' if platform.system() == 'Windows' else (
     'blindbox-server-mac-arm64' if platform.machine() == 'arm64' else 'blindbox-server-mac-x64')
 if platform.system() not in ('Windows', 'Darwin'):
     raise SystemExit('This repository ships only macOS and Windows server binaries.')
+source = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else GAME / name
 protected = [GAME / name, *sorted((GAME / 'data').glob('*'))]
 before_hashes = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in protected if p.is_file()}
 checks = []
@@ -43,7 +45,7 @@ def count(state):
 with tempfile.TemporaryDirectory(prefix='qiwu-api-test-') as temp:
     temp = Path(temp)
     executable = temp / name
-    shutil.copy2(GAME / name, executable)
+    shutil.copy2(source, executable)
     executable.chmod(0o755)
     with socket.socket() as sock:
         sock.bind(('127.0.0.1', 0))

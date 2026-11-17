@@ -79,7 +79,7 @@ export async function createGame(base = new URL('./', location.href).href, optio
       const reconciled = await readState();
       if (!reconciled.ok) return blockedResult();
       if (result.uncertain || (result.ok && !result.state)) {
-        const recovered = recover?.(before, state);
+        const recovered = await recover?.(before, state);
         if (recovered) return { ok: true, recovered: true, ...recovered, state: clone(state), progress: clone(progress) };
         return failure('outcome-unknown', '已重新读取存档，请查看当前结果；这次操作不会自动重试。', { refreshed: true, state: clone(state), progress: clone(progress) });
       }
@@ -150,6 +150,52 @@ export async function createGame(base = new URL('./', location.href).href, optio
     },
     unshowcase: (seriesId, itemId) => mutate('api/unshowcase', { seriesId, itemId }, latest => latest.showcase[seriesId]?.[itemId] ? null : staleResult()),
     sellFromStorage: uid => mutate('api/sell', { from: 'storage', uid }, latest => latest.storage.some(entry => entry.uid === uid) ? null : staleResult()),
+    listSaves: () => request('GET', 'api/saves'),
+    async saveSlot(slot, name, presentation, revision = '') {
+      const snapshot = clone(state), view = clone(presentation);
+      return mutate('api/saves/save', { slot, name, presentation: view, revision },
+        latest => JSON.stringify(latest) === JSON.stringify(snapshot) ? null : staleResult(),
+        async () => {
+          const result = await request('GET', `api/saves/${slot}`);
+          return result.ok && result.save.revision !== revision && result.save.name === name &&
+            JSON.stringify(result.save.state) === JSON.stringify(snapshot) &&
+            JSON.stringify(result.save.presentation) === JSON.stringify(view) ? { save: result.save } : null;
+        });
+    },
+    async loadSlot(slot, revision, presentation) {
+      if (busy) return busyResult();
+      if (needsSync) return blockedResult();
+      const before = JSON.stringify(state);
+      // Read the exact target before restoring it. This also lets a lost response
+      // recover its display settings, including when restoring the backup slot.
+      const target = await request('GET', `api/saves/${slot}`);
+      if (!target.ok) return target;
+      if (target.save.revision !== revision) return failure('save_changed', '存档已更新，请重新查看后读档。');
+      return mutate('api/saves/load', { slot, revision, presentation: clone(presentation) },
+        latest => JSON.stringify(latest) === before ? null : staleResult(),
+        (_previous, latest) => JSON.stringify(latest) === JSON.stringify(target.save.state)
+          ? { loadedSlot: slot, presentation: clone(target.save.presentation) } : null);
+    },
+    deleteSlot: (slot, revision) => mutate('api/saves/delete', { slot, revision }, null,
+      async () => {
+        const result = await request('GET', `api/saves/${slot}`);
+        return result.status === 404 && result.error === 'save_not_found' ? { deletedSlot: slot } : null;
+      }),
+    async startNewGame(presentation) {
+      const snapshot = clone(state), view = clone(presentation);
+      const result = await mutate('api/saves/new', { presentation: view },
+        latest => JSON.stringify(latest) === JSON.stringify(snapshot) ? null : staleResult(),
+        async (_before, latest) => {
+          const backup = await request('GET', 'api/saves/0');
+          const fresh = latest.coins === data.economy.startCoins && latest.boxesOpened === 0 && latest.coinsSpent === 0 &&
+            !latest.pending && !latest.storage.length && !Object.keys(latest.everOwned ?? {}).length && !latest.won &&
+            !(latest.bailoutCount ?? 0) && Object.values(latest.showcase).every(items => !Object.values(items).some(Boolean));
+          return fresh && backup.ok && backup.save.name === '重新开局前的进度' &&
+            JSON.stringify(backup.save.state) === JSON.stringify(snapshot)
+            ? { reset: true, presentation: { ...view, layout: [null, null, null] } } : null;
+        });
+      return result.status === 404 ? { ...result, message: '服务仍是旧版本，请关闭旧启动窗口，再用「启动奇物百货」打开后重新开局。' } : result;
+    },
     async maybeBailout() {
       const cheapest = Math.min(...data.series.map(series => series.boxPrice));
       if (busy || needsSync || state.pending || state.storage.length || state.coins >= cheapest) return null;

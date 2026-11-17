@@ -34,84 +34,100 @@ export const modelAssets = Object.freeze({
     "bytes": 14918788
   },
   "ms-06": {
-    "available": false,
-    "thumbnail": null,
-    "orientation": 0
+    "available": true,
+    "thumbnail": "./thumbnails/ms-06.png",
+    "orientation": 0,
+    "bytes": 15799464
   },
   "ms-07": {
-    "available": false,
-    "thumbnail": null,
-    "orientation": 0
+    "available": true,
+    "thumbnail": "./thumbnails/ms-07.png",
+    "orientation": 0,
+    "bytes": 17271760
   },
   "wa-01": {
-    "available": false,
-    "thumbnail": null,
-    "orientation": 0
+    "available": true,
+    "thumbnail": "./thumbnails/wa-01.png",
+    "orientation": 0,
+    "bytes": 9627000
   },
   "wa-02": {
-    "available": false,
-    "thumbnail": null,
-    "orientation": 0
+    "available": true,
+    "thumbnail": "./thumbnails/wa-02.png",
+    "orientation": 0,
+    "bytes": 10374440
   },
   "wa-03": {
-    "available": false,
-    "thumbnail": null,
-    "orientation": 0
+    "available": true,
+    "thumbnail": "./thumbnails/wa-03.png",
+    "orientation": 0,
+    "bytes": 13512188
   },
   "wa-04": {
-    "available": false,
-    "thumbnail": null,
-    "orientation": 0
+    "available": true,
+    "thumbnail": "./thumbnails/wa-04.png",
+    "orientation": 0,
+    "bytes": 11577040
   },
   "wa-05": {
-    "available": false,
-    "thumbnail": null,
-    "orientation": 0
+    "available": true,
+    "thumbnail": "./thumbnails/wa-05.png",
+    "orientation": 0,
+    "bytes": 12017796
   },
   "wa-06": {
-    "available": false,
-    "thumbnail": null,
-    "orientation": 0
+    "available": true,
+    "thumbnail": "./thumbnails/wa-06.png",
+    "orientation": 0,
+    "bytes": 10752144
   },
   "wa-07": {
-    "available": false,
-    "thumbnail": null,
-    "orientation": 0
+    "available": true,
+    "thumbnail": "./thumbnails/wa-07.png",
+    "orientation": 0,
+    "bytes": 12011840
   },
   "wd-01": {
-    "available": false,
-    "thumbnail": null,
-    "orientation": 0
+    "available": true,
+    "thumbnail": "./thumbnails/wd-01.png",
+    "orientation": 0,
+    "bytes": 9959380
   },
   "wd-02": {
-    "available": false,
-    "thumbnail": null,
-    "orientation": 0
+    "available": true,
+    "thumbnail": "./thumbnails/wd-02.png",
+    "orientation": 0,
+    "bytes": 10175612
   },
   "wd-03": {
-    "available": false,
-    "thumbnail": null,
-    "orientation": 0
+    "available": true,
+    "thumbnail": "./thumbnails/wd-03.png",
+    "orientation": 0,
+    "bytes": 13339560
   },
   "wd-04": {
-    "available": false,
-    "thumbnail": null,
-    "orientation": 0
+    "available": true,
+    "thumbnail": "./thumbnails/wd-04.png",
+    "orientation": 0,
+    "bytes": 14855540
   },
   "wd-05": {
-    "available": false,
-    "thumbnail": null,
-    "orientation": 0
+    "available": true,
+    "thumbnail": "./thumbnails/wd-05.png",
+    "orientation": 0,
+    "bytes": 9466252
   },
   "wd-06": {
-    "available": false,
-    "thumbnail": null,
-    "orientation": 0
+    "available": true,
+    "thumbnail": "./thumbnails/wd-06.png",
+    "orientation": 0,
+    "bytes": 12877656
   },
   "wd-07": {
-    "available": false,
-    "thumbnail": null,
-    "orientation": 0
+    "available": true,
+    "thumbnail": "./thumbnails/wd-07.png",
+    "orientation": 0,
+    "bytes": 13257568
   },
   "mf-01": {
     "available": false,

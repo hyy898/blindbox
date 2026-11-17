@@ -22,7 +22,7 @@
 .flow-dialog.phase-opening .flow-package{animation:qiwu-package-away 2.1s both}
 .flow-dialog.phase-opening .result-viewer{animation:qiwu-collectible-rise 1.4s .35s both}
 .flow-dialog.phase-opening .qiwu-viewer-controls{visibility:hidden}
-.flow-dialog.phase-revealed .result-details{animation:qiwu-receipt .35s both}
+.flow-dialog.phase-opening .result-details,.flow-dialog.phase-revealed .result-details{animation:qiwu-receipt .18s both}
 @keyframes qiwu-lid{from{transform:skewX(-39deg)}to{transform:translateY(-90px) rotateX(85deg) skewX(-39deg);opacity:0}}
 @keyframes qiwu-face{to{transform:perspective(500px) rotateX(-82deg);opacity:.15}}
 @keyframes qiwu-side{to{transform:perspective(500px) rotateY(75deg) skewY(-51deg);opacity:0}}
