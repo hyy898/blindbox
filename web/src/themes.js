@@ -15,6 +15,6 @@ export function motif(id) {
  };
  return `<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[id]||paths['midnight-snack']}</svg>`;
 }
-export function boxMarkup(series,number=1) {
- return `<span class="paper-box"><span class="box-top"><span>奇物百货</span></span><span class="box-side"><span>好好收藏</span></span><span class="box-face"><span class="box-brand">奇物百货 <i>珍奇小物 · 认真陈列</i></span><span class="box-motif">${motif(series.id)}</span><strong>${esc(series.name)}</strong><span class="box-edition">系列藏品 / ${String(number).padStart(2,'0')}</span><span class="box-footer">内有奇物　请拆封 ↓</span></span><span class="box-seal">奇 物 百 货</span></span>`;
+export function boxMarkup(series) {
+ return `<span class="paper-box" data-package-series="${esc(series.id)}" aria-hidden="true"></span>`;
 }

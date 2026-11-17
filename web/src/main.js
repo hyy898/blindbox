@@ -17,6 +17,9 @@ const app=$('#app'), dialog=$('#experience');
 startBrowserSession(new URL('./', location.href).href);
 let game, page='shop', selected, picked=1, busy=false, dialogToken=0, openingSequence, viewer, shelves=[], activeEntry, entryMode, lastFocus, selectedSlot=null, experiencePhase='closed';
 let disposePreviews=()=>{};
+const boxViewers=new Map(), packageTasks=new WeakMap();
+let activePackageTask=null;
+let sealProgress=0, transferAnimation=null, sealResize=null;
 const safeRead=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}};
 const prefs=safeRead('qiwu-preferences',{muted:true,reduced:matchMedia('(prefers-reduced-motion: reduce)').matches});
 let layout=safeRead('qiwu-display-v1',[null,null,null]);
@@ -49,7 +52,7 @@ function openSaves(){
 }
 function header(){const st=game.getState();return `<header class="header"><button class="brand" data-nav="shop" aria-label="奇物百货，回到店内"><span class="brand-stamp">奇</span><span>奇物百货</span></button><nav aria-label="主导航">${[['shop','店内'],['collection','我的收藏'],['case','我的展柜']].map(([id,label])=>`<button data-nav="${id}" ${page===id?'aria-current="page"':''}>${label}${id==='collection'?`<span class="nav-number">${ownEntries().length}</span>`:''}</button>`).join('')}</nav><div class="header-end"><span class="wallet"><i>◉</i><span><small>可用金币</small><b>${fmt(st.coins)}</b></span></span><button class="save-entry" id="save-game" aria-label="存档、读档与删除存档">存档</button><button class="icon-button" id="settings" aria-label="偏好与店内说明">☷</button></div></header>`;}
 function pendingBar(){return game.getPending()?`<div class="pending-bar"><span>柜台还有一件藏品待收纳。</span><button class="text-link" id="resume">继续查看 →</button></div>`:'';}
-function render(){disposePreviews();shelves.forEach(v=>v.dispose());shelves=[];document.documentElement.dataset.reduced=prefs.reduced;app.innerHTML=header()+`<main id="main">${pendingBar()}${page==='shop'?shop():page==='collection'?collection():showcase()}</main><footer class="footer"><span><b>奇物百货</b></span><button class="text-link" id="rules">店内说明 ↗</button></footer>`;app.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>navigate(b.dataset.nav));$('#save-game').onclick=openSaves;$('#settings').onclick=()=>openGuide();$('#rules').onclick=()=>openGuide();if($('#resume'))$('#resume').onclick=()=>showResult(game.getPending(),'pending');if(page==='shop')bindShop();if(page==='collection')bindCollection();if(page==='case')bindCase();disposePreviews=bindCollectionPreviews(app,{index:game.index,base:game.server});}
+function render(){disposePreviews();boxViewers.forEach(v=>v.dispose());boxViewers.clear();shelves.forEach(v=>v.dispose());shelves=[];document.documentElement.dataset.reduced=prefs.reduced;app.innerHTML=header()+`<main id="main">${pendingBar()}${page==='shop'?shop():page==='collection'?collection():showcase()}</main><footer class="footer"><span><b>奇物百货</b></span><button class="text-link" id="rules">店内说明 ↗</button></footer>`;app.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>navigate(b.dataset.nav));$('#save-game').onclick=openSaves;$('#settings').onclick=()=>openGuide();$('#rules').onclick=()=>openGuide();if($('#resume'))$('#resume').onclick=()=>showResult(game.getPending(),'pending');if(page==='shop')bindShop();if(page==='collection')bindCollection();if(page==='case')bindCase();disposePreviews=bindCollectionPreviews(app,{index:game.index,base:game.server});}
 function navigate(next){closeExperience();selectedSlot=null;page=next;render();window.scrollTo({top:0,behavior:prefs.reduced?'instant':'smooth'});}
 function shop(){return renderStorefront({series:game.data.series,selected,picked,state:game.getState(),entries:ownEntries(),index:game.index,slots:validLayout(),busy});}
 function selectBox(index) {
@@ -68,6 +71,20 @@ function beginSeal(index=picked) {
   showSeal();
 }
 function bindShop(){
+  app.querySelectorAll('[data-box]').forEach(box=>{
+    const container=$('.paper-box',box),series=current();
+    const task=(async()=>{
+      const {createViewer}=await import('./viewer.js');
+      if(!container.isConnected)return null;
+      const v=await createViewer(container,{theme:themeFor(series.id),packaging:true,reducedMotion:prefs.reduced});
+      if(!container.isConnected){v.dispose();return null;}
+      if(dialog.contains(container)){viewer=v;v.setSealProgress(sealProgress);v.resize();}
+      else boxViewers.set(Number(box.dataset.box),v);
+      return v;
+    })();
+    packageTasks.set(container,task);
+    task.catch(()=>{if(container.isConnected)container.textContent='包装暂时未能显示';});
+  });
   app.querySelectorAll('[data-series]').forEach(b=>b.onclick=()=>{selected=b.dataset.series;picked=1;render();});
   const gesture=createBoxGesture();
   $('.counter-boxes').addEventListener('click',event=>{
@@ -168,37 +185,58 @@ function bindCase(){
   });
 }
 function startDialog(){lastFocus=document.activeElement;closeExperience(false);dialogToken++;dialog.showModal();dialog.scrollTop=0;return dialogToken;}
-function closeExperience(restore=true){experiencePhase='closed';openingSequence?.dispose();openingSequence=null;dialogToken++;viewer?.dispose();viewer=null;dialog.close();dialog.innerHTML='';activeEntry=null;if(restore&&lastFocus?.isConnected)lastFocus.focus();}
+function closeExperience(restore=true){sealResize?.disconnect();sealResize=null;transferAnimation?.cancel();transferAnimation=null;activePackageTask=null;experiencePhase='closed';openingSequence?.dispose();openingSequence=null;dialogToken++;viewer?.dispose();viewer=null;dialog.close();dialog.innerHTML='';activeEntry=null;if(restore&&lastFocus?.isConnected)lastFocus.focus();}
 dialog.addEventListener('cancel',e=>{e.preventDefault();closeExperience();if(page!=='case')render();});
 function dialogTop(label){return `<div class="dialog-top"><span><b class="mini-stamp">奇</b> ${label}</span><button class="close-button" id="close-experience" aria-label="收起，保留当前结果">×</button></div>`;}
 function bindClose(){$('#close-experience').onclick=()=>{closeExperience();if(page!=='case')render();};}
 function showSeal(){
   if(busy||game.getPending()||dialog.open)return;
   const s=current(),packageNode=$(`[data-box="${picked}"] .paper-box`),from=packageNode?.getBoundingClientRect();
-  startDialog();experiencePhase='seal';
+  const previous=boxViewers.get(picked);boxViewers.delete(picked);
+  startDialog();experiencePhase='seal';sealProgress=0;viewer=previous;dialog.dataset.box=String(picked);
   dialog.className='experience result-dialog flow-dialog phase-seal';dialog.style=themeStyle(s);
   dialog.innerHTML=dialogTop('柜台拆封')+`<div class="result-grid">
-    <div class="result-stage"><div id="result-viewer" class="result-viewer"></div>
-      <div class="flow-package"><div class="seal-box">${packageNode?'':boxMarkup(s,picked+1)}</div></div>
-      <div class="tear-track" id="tear-track"><div class="tear-progress"></div><span>向右揭开封条</span><button id="tear-handle" aria-label="向右拖动封条，或按回车拆封">→</button><span class="tear-end">✂</span></div>
-    </div><div class="result-details seal-details"><span class="eyebrow">${esc(s.name)}</span><h2>第 ${String(picked+1).padStart(2,'0')} 盒</h2><p class="seal-price">${fmt(s.boxPrice)} 金币 / 盒</p><button class="primary" data-write id="direct-open">直接拆封 <span>−${fmt(s.boxPrice)}</span></button><details class="seal-help"><summary>拆封方式</summary><p>向右拖动封条，或点击「直接拆封」。也可选中封条后按回车。拆封时结算。</p></details></div></div>`;
+    <div class="result-stage"><div id="result-viewer" class="packaging-viewport">${packageNode?'':boxMarkup(s)}</div><button id="tear-handle" class="seal-hit" aria-label="向上揭起封签，或按回车拆封"></button></div>
+    <div class="result-details seal-details"><span class="eyebrow">${esc(s.name)}</span><h2>拆这一盒</h2><p class="seal-price">${fmt(s.boxPrice)} 金币 / 盒</p><button class="primary" data-write id="direct-open">直接拆封 <span>−${fmt(s.boxPrice)}</span></button><details class="seal-help"><summary>拆封方式</summary><p>从封签下缘向上揭起，或点击「直接拆封」。也可选中封签后按回车。拆封时结算。</p></details></div></div>`;
+  const target=$('#result-viewer');
   if(packageNode){
-    $('.seal-box').append(packageNode);
+    packageNode.removeAttribute('aria-hidden');target.append(packageNode);activePackageTask=packageTasks.get(packageNode)||Promise.resolve(previous);
+    viewer?.resize();
     const to=packageNode.getBoundingClientRect();
-    if(!prefs.reduced)packageNode.animate([{transform:`translate(${from.left-to.left}px,${from.top-to.top}px) scale(${from.width/to.width})`},{transform:'none'}],{duration:500,easing:'cubic-bezier(.2,.7,.2,1)'});
+    if(!prefs.reduced)transferAnimation=packageNode.animate([
+      {transform:`translate(${from.left-to.left}px,${from.top-to.top}px) scale(${from.width/to.width})`},
+      {transform:'none'}],{duration:480,easing:'cubic-bezier(.2,.7,.2,1)'});
+  }else{
+    $('.paper-box',target).removeAttribute('aria-hidden');
+    activePackageTask=import('./viewer.js').then(({createViewer})=>createViewer($('.paper-box',target),{theme:themeFor(s.id),packaging:true,reducedMotion:prefs.reduced})).then(v=>{
+      if(!target.isConnected){v.dispose();return null;}viewer=v;return v;
+    });
   }
   bindClose();$('#direct-open').onclick=()=>draw(s.id);
-  const handle=$('#tear-handle'),track=$('#tear-track');let startX,dragging=false;
-  const peel=value=>{track.style.setProperty('--peel',`${value*(track.clientWidth-58)}px`);track.style.setProperty('--peel-progress',`${value*100}%`);dialog.style.setProperty('--unseal',value);};
-  handle.onpointerdown=e=>{if(busy||experiencePhase!=='seal')return;dragging=true;startX=e.clientX;handle.setPointerCapture(e.pointerId);};
-  handle.onpointermove=e=>{if(!dragging)return;const progress=Math.max(0,Math.min(1,(e.clientX-startX)/(track.clientWidth-58)));peel(progress);if(progress>=.86){dragging=false;peel(1);draw(s.id);}};
+  const handle=$('#tear-handle');let startY,dragging=false;
+  activePackageTask.then(v=>{
+    if(!handle.isConnected||!v)return;
+    const locate=()=>{
+      v.resize();const point=v.sealAnchor(),rect=v.element.getBoundingClientRect(),stage=target.parentElement.getBoundingClientRect();
+      handle.style.left=`${rect.left-stage.left+point.x*rect.width-handle.offsetWidth/2}px`;
+      handle.style.top=`${rect.top-stage.top+point.y*rect.height-handle.offsetHeight/2}px`;
+    };
+    sealResize=new ResizeObserver(locate);sealResize.observe(target);locate();
+    transferAnimation?.finished.then(locate).catch(()=>{});
+  }).catch(()=>{});
+  const peel=value=>{sealProgress=value;viewer?.setSealProgress(value);};
+  handle.onpointerenter=()=>{if(experiencePhase==='seal'&&!dragging)peel(.05);};
+  handle.onpointerleave=()=>{if(experiencePhase==='seal'&&!dragging)peel(0);};
+  handle.onpointerdown=e=>{if(busy||experiencePhase!=='seal')return;dragging=true;startY=e.clientY;handle.setPointerCapture(e.pointerId);};
+  handle.onpointermove=e=>{if(!dragging)return;const progress=Math.max(0,Math.min(1,(startY-e.clientY)/100));peel(progress);if(progress>=.86){dragging=false;draw(s.id);}};
   handle.onpointerup=handle.onpointercancel=()=>{dragging=false;if(experiencePhase==='seal')peel(0);};
   handle.onclick=e=>{if(e.detail===0)draw(s.id);};
 }
 async function draw(sid){
   if(busy||experiencePhase!=='seal'||!dialog.open)return;
+  sealResize?.disconnect();sealResize=null;
   experiencePhase='settling';setBusy(true);sound(sid);const token=dialogToken;
-  dialog.style.setProperty('--unseal',1);
+  $('#tear-handle')?.remove();
   const direct=$('#direct-open');if(direct)direct.textContent='正在结算…';
   try{
     const result=await game.open(sid);render();
@@ -242,28 +280,39 @@ async function loadResultViewer(entry,token,onStatus=()=>{}){
 }
 function playOpening(entry){
   openingSequence?.dispose();experiencePhase='opening';activeEntry={...entry};entryMode='pending';
-  const token=dialogToken;
+  const token=dialogToken,peel=sealProgress;
   dialog.classList.remove('phase-seal');dialog.classList.add('phase-opening');
-  $('#tear-track')?.remove();
+  const details=$('.result-details');
+  details.className='result-details reveal-waiting';
+  details.innerHTML='<p role="status" class="opening-status">正在准备这件藏品…</p><button class="text-link" id="skip">跳过动画 →</button>';
+  const reveal=()=>{
+    $('.dialog-top > span').innerHTML='<b class="mini-stamp">奇</b> 藏品详情';
+    details.className='result-details';details.innerHTML=resultDetails(entry,'pending');
+    bindResult(entry,'pending');
+  };
   const finish=()=>{
     experiencePhase='result';
     dialog.classList.remove('phase-opening');dialog.classList.add('phase-revealed');
-    $('.flow-package')?.remove();
     $('#skip')?.remove();
   };
-  openingSequence=startOpeningSequence({element:$('.flow-package'),reducedMotion:prefs.reduced,
+  openingSequence=startOpeningSequence({reducedMotion:prefs.reduced,
     isActive:()=>token===dialogToken&&dialog.open,
-    startViewer:report=>loadResultViewer(entry,token,report),
-    onModelStatus:kind=>{dialog.dataset.modelStatus=kind;},
-    onReveal:()=>{
-      $('.dialog-top > span').innerHTML='<b class="mini-stamp">奇</b> 藏品详情';
-      $('.result-details').className='result-details';
-      $('.result-details').innerHTML=resultDetails(entry,'pending')+'<button class="text-link" id="skip">跳过动画 →</button>';
-      bindResult(entry,'pending');
-      $('#skip').onclick=()=>openingSequence?.skip();
+    onFrame:time=>{viewer?.setOpeningTime(time,peel);dialog.dataset.openingTime=String(Math.round(time));},
+    startViewer:async report=>{
+      const v=await activePackageTask;
+      if(token!==dialogToken||!dialog.open)return;
+      if(!v)throw new Error('包装展示未就绪');
+      viewer=v;v.setOpeningTime(Number(dialog.dataset.openingTime)||0,peel);
+      const item=game.index.byId[entry.itemId];
+      await v.loadCollectible({item,modelUrl:new URL(item.model,game.server).href,assetBase:game.server,onStatus:report});
     },
-    onFinish:finish
+    onModelStatus:kind=>{
+      dialog.dataset.modelStatus=kind;
+      const status=$('.opening-status');if(status)status.textContent=kind==='ready'?'正在揭晓…':'正在准备这件藏品…';
+    },
+    onReveal:reveal,onFinish:finish
   });
+  if($('#skip'))$('#skip').onclick=()=>openingSequence?.skip();
 }
 async function showResult(entry,mode){
   if(!entry)return;const token=startDialog();experiencePhase='result';activeEntry={...entry};entryMode=mode;

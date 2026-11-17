@@ -1,55 +1,36 @@
-// 结果先展示，纸盒动画与模型加载继续进行；下一步操作可以立即中断动画。
-export function startOpeningSequence({ element, reducedMotion = false, isActive = () => true,
-  startViewer, onModelStatus = () => {}, onReveal, onFinish,
-  getStyle = globalThis.getComputedStyle, setTimer = globalThis.setTimeout, clearTimer = globalThis.clearTimeout }) {
-  let finished = false, disposed = false, timer;
-  const cleanup = () => {
-    clearTimer(timer);
-    element?.removeEventListener('animationend', ended);
-    element?.removeEventListener('animationcancel', ended);
+/** Presentation clock only. A saved result is supplied by the caller; never draws. */
+export function startOpeningSequence({reducedMotion=false,isActive=()=>true,startViewer,
+  onModelStatus=()=>{},onFrame=()=>{},onReveal=()=>{},onFinish=()=>{},
+  requestFrame=globalThis.requestAnimationFrame,cancelFrame=globalThis.cancelAnimationFrame}) {
+  let disposed=false,finished=false,revealed=false,ready=false,frame=0,last=null,time=0;
+  const active=()=>!disposed&&isActive();
+  const reveal=()=>{if(!revealed&&active()){revealed=true;onReveal();}};
+  const finish=()=>{
+    if(!active()||finished)return;
+    finished=true;cancelFrame(frame);frame=0;time=2600;onFrame(time);reveal();onFinish();
   };
-  const finish = () => {
-    if (disposed || finished) return;
-    cleanup();
-    if (!isActive()) return;
-    finished = true;
-    onFinish();
+  const tick=stamp=>{
+    frame=0;if(!active()||finished)return;
+    const delta=last===null?0:Math.min(64,Math.max(0,stamp-last));last=stamp;
+    if(reducedMotion){
+      time=ready?time+delta*13:Math.min(260,time+delta*13);
+    }else time=ready?time+delta:Math.min(260,time+delta);
+    onFrame(Math.min(2600,time));
+    if(time>=2280)reveal();
+    if(time>=2600){finish();return;}
+    if(time<260||ready)frame=requestFrame(tick);
+    else last=null; // Loading time is not performance time.
   };
-  const ended = event => {
-    if (event.target === element && event.animationName === 'qiwu-package-away') finish();
+  const report=kind=>{
+    if(!active())return;
+    ready=kind==='ready';onModelStatus(kind);
+    if(kind==='error'||kind==='missing')reveal();
+    if(!finished&&!frame){last=null;frame=requestFrame(tick);}
   };
-  const report = kind => { if (!disposed && isActive()) onModelStatus(kind); };
-  const controls = {
-    skip: finish,
-    run(action) {
-      if (disposed || !isActive()) return;
-      finish();
-      if (!disposed && isActive()) return action();
-    },
-    dispose() { disposed = true; cleanup(); }
-  };
-  if (!isActive()) { disposed = true; return controls; }
-  onReveal();
-  element?.addEventListener('animationend', ended);
-  element?.addEventListener('animationcancel', ended);
-
-  // 动画事件是主信号；隐藏页、样式关闭动画时按实际 CSS 时长兜底。
-  let duration = 0;
-  if (element && !reducedMotion) {
-    const style = getStyle(element);
-    const names = style.animationName.split(',').map(value => value.trim());
-    const index = names.indexOf('qiwu-package-away');
-    const milliseconds = value => (parseFloat(value) || 0) * (value.trim().endsWith('ms') ? 1 : 1000);
-    const times = key => style[key].split(',').map(milliseconds);
-    if (index >= 0) {
-      const durations = times('animationDuration'), delays = times('animationDelay');
-      duration = Math.max(0, durations[index % durations.length] + delays[index % delays.length]);
-    }
-  }
-  if (duration > 0) timer = setTimer(finish, duration + 50);
-
-  try { Promise.resolve(startViewer(report)).catch(() => report('error')); }
-  catch { report('error'); }
-  if (duration === 0) finish();
+  const controls={skip:finish,run(action){if(!active())return;finish();return action();},
+    dispose(){disposed=true;cancelFrame(frame);frame=0;}};
+  if(!active())return controls;
+  onFrame(0);frame=requestFrame(tick);
+  try{Promise.resolve(startViewer(report)).catch(()=>report('error'));}catch{report('error');}
   return controls;
 }

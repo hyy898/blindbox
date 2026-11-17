@@ -4,6 +4,7 @@ import { modelAssets, resolveModelAsset } from './assets.js';
 import { createModelCache } from './model-cache.js';
 import { clone as cloneScene } from 'three/addons/utils/SkeletonUtils.js';
 import './viewer.css';
+import { createPackaging, openingPose } from './packaging.js';
 
 const LOAD_TIMEOUT = 25000;
 const DEG = Math.PI / 180;
@@ -164,17 +165,18 @@ function addStage(scene, theme) {
     add(new THREE.BoxGeometry(1.94, 0.025, 1.58), porcelain, 0, -0.018, 0);
     add(new THREE.BoxGeometry(2.14, 0.045, 0.045), accent, 0, -0.06, 0.9);
   }
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(24, 24), new THREE.ShadowMaterial({ opacity: 0.12 }));
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(24, 24), new THREE.ShadowMaterial({ opacity: 0.12, depthWrite:false }));
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -0.235;
   floor.receiveShadow = true;
-  scene.add(stage, floor);
+  stage.add(floor);
+  scene.add(stage);
   return stage;
 }
 
 /** A display-only viewer. Loading/retrying never calls the game or changes inventory. */
 export async function createViewer(container, {
-  item, modelUrl, theme = {}, rotation = 0, reducedMotion = false, onRotation = () => {}, onStatus = () => {},
+  item = {id:'',name:'包装盒'}, modelUrl, theme = {}, rotation = 0, reducedMotion = false, onRotation = () => {}, onStatus = () => {}, packaging = false,
   assetBase = new URL('./', location.href).href,
   thumbnail = modelAssets[item.id]?.thumbnail,
   orientation = modelAssets[item.id]?.orientation || 0
@@ -235,6 +237,7 @@ export async function createViewer(container, {
   let ready = false;
   let cameraInitialized = false;
   let contextLost = false;
+  let packageObject = null, stage = null, openingTime = packaging ? 0 : 2600, initialPeel = 0;
   const events = new AbortController();
 
   function setStatus(kind, title, detail) {
@@ -244,7 +247,7 @@ export async function createViewer(container, {
     statusDetail.textContent = detail;
     retryButton.hidden = !['error', 'missing'].includes(kind);
     retryButton.textContent = kind === 'missing' ? '检查模型更新' : '重新加载模型';
-    controls.hidden = kind !== 'ready';
+    controls.hidden = kind !== 'ready' || openingTime < 2600;
     if (preview) preview.hidden = kind === 'ready' || previewFailed;
     canvas.setAttribute('aria-busy', String(kind === 'loading'));
     canvas.tabIndex = kind === 'ready' ? 0 : -1;
@@ -259,7 +262,7 @@ export async function createViewer(container, {
       if (model && !ready && element.dataset.status === 'loading') {
         ready = true;
         canvas.setAttribute('aria-label', `${item.name}，拖动或左右方向键旋转`);
-        if (!reducedMotion) element.classList.add('qiwu-viewer-arrived');
+        if (!reducedMotion && !packaging) element.classList.add('qiwu-viewer-arrived');
         // Consumers may begin their reveal only after an actual frame exists.
         setStatus('ready', '', '');
       }
@@ -272,10 +275,10 @@ export async function createViewer(container, {
   }
 
   function render() {
-    if (disposed || !renderer || !inView || frame) return;
+    if (disposed || !renderer || (!inView && !packaging) || frame) return;
     frame = requestAnimationFrame(() => {
       frame = 0;
-      if (inView) paint();
+      if (inView || packaging) paint();
     });
   }
 
@@ -291,9 +294,14 @@ export async function createViewer(container, {
     // needs a correctly positioned camera before its first frame is exposed.
     if (sizeChanged || !cameraInitialized) {
       camera.aspect = width / height;
-      const distance = camera.aspect < 0.9 ? 5 / Math.max(camera.aspect, 0.6) : 5;
-      camera.position.set(0, 1.8, distance);
-      camera.lookAt(0, 0.65, 0);
+      if(packaging){
+        const half=1.75;
+        camera.left=-half*camera.aspect;camera.right=half*camera.aspect;camera.top=half;camera.bottom=-half;
+        camera.position.set(4.2,3.4,8);camera.lookAt(0,1,0);
+      }else{
+        const distance = camera.aspect < 0.9 ? 5 / Math.max(camera.aspect, 0.6) : 5;
+        camera.position.set(0, 1.8, distance);camera.lookAt(0, 0.65, 0);
+      }
       camera.updateProjectionMatrix();
       cameraInitialized = true;
     }
@@ -318,7 +326,7 @@ export async function createViewer(container, {
   }
 
   function turn(delta) {
-    if (!ready) return;
+    if (!ready || openingTime < 2600) return;
     setRotation(angle + delta);
     onRotation(angle);
   }
@@ -339,7 +347,7 @@ export async function createViewer(container, {
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.15;
       scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(34, 1, 0.1, 60);
+      camera = packaging ? new THREE.OrthographicCamera(-2,2,1.75,-1.75,.1,60) : new THREE.PerspectiveCamera(34, 1, 0.1, 60);
       scene.add(new THREE.HemisphereLight('#fff8e9', '#c1ae91', 2.3));
       const key = new THREE.DirectionalLight('#fff1d6', 3.4);
       key.position.set(-3.5, 5, 4.5);
@@ -354,7 +362,8 @@ export async function createViewer(container, {
       const fill = new THREE.DirectionalLight('#e4e9ef', 1.5);
       fill.position.set(4, 2, -2);
       scene.add(fill);
-      addStage(scene, theme);
+      stage=addStage(scene, theme);
+      if(packaging)stage.visible=false;
       resize();
       return true;
     } catch {
@@ -371,7 +380,7 @@ export async function createViewer(container, {
     if (disposed) return;
     const request = ++token;
     clearModel();
-    setStatus('loading', '正在确认模型资源', '先显示预览，三维藏品准备好后自动出现。');
+    setStatus('loading', '正在确认模型资源', packaging ? '结果已保存，准备好后继续揭晓。' : '先显示预览，三维藏品准备好后自动出现。');
     render();
     let parsed = null;
     let lease = null;
@@ -408,6 +417,13 @@ export async function createViewer(container, {
       pivot.userData = { itemId: item.id, modelUrl: absoluteUrl.href, isPlaceholder: false };
       pivot.add(normalizer);
       pivot.rotation.y = angle + orientation;
+      if(packaging){
+        pivot.updateMatrixWorld(true);
+        const fitted=new THREE.Box3().setFromObject(pivot).getSize(new THREE.Vector3());
+        // Even the widest collectible fits inside all four opaque walls.
+        const fit=Math.min(1,2.28/fitted.x,1.68/fitted.z,1.72/fitted.y);
+        pivot.scale.setScalar(fit);
+      }
       parsed.traverse(child => {
         if (child.isMesh) {
           child.castShadow = true;
@@ -419,6 +435,7 @@ export async function createViewer(container, {
       lease = null;
       parsed = null;
       scene.add(model);
+      if(packaging)applyOpening(openingTime);
       // A hidden viewer stays loading until it has a visible frame.
       resize();
     } catch (error) {
@@ -434,18 +451,18 @@ export async function createViewer(container, {
     button.addEventListener('click', () => turn(Number(button.dataset.turn) * 15 * DEG), { signal: events.signal });
   });
   element.querySelector('.qiwu-viewer-front').addEventListener('click', () => {
-    if (!ready) return;
+    if (!ready || openingTime < 2600) return;
     setRotation(0);
     onRotation(0);
   }, { signal: events.signal });
   canvas.addEventListener('keydown', event => {
-    if (!ready || !['ArrowLeft', 'ArrowRight', 'Home'].includes(event.key)) return;
+    if (!ready || openingTime < 2600 || !['ArrowLeft', 'ArrowRight', 'Home'].includes(event.key)) return;
     event.preventDefault();
     if (event.key === 'Home') { setRotation(0); onRotation(0); }
     else turn((event.key === 'ArrowLeft' ? -1 : 1) * 10 * DEG);
   }, { signal: events.signal });
   canvas.addEventListener('pointerdown', event => {
-    if (!ready || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    if (!ready || openingTime < 2600 || (event.pointerType === 'mouse' && event.button !== 0)) return;
     drag = { id: event.pointerId, x: event.clientX };
     canvas.setPointerCapture(event.pointerId);
     canvas.classList.add('is-dragging');
@@ -481,10 +498,49 @@ export async function createViewer(container, {
     if (inView) resize();
   });
   intersectionObserver.observe(element);
-  void retry(true);
+  function applyOpening(ms, peel=initialPeel){
+    openingTime=ms;initialPeel=peel;
+    const pose=openingPose(ms,peel);
+    if(packageObject){
+      packageObject.body.position.y=pose.bodyY;packageObject.body.visible=pose.bodyVisible;
+      packageObject.lid.position.set(0,pose.lidY,pose.lidZ);packageObject.lid.visible=pose.lidVisible;
+      packageObject.seal.visible=pose.sealVisible;packageObject.seal.position.y=pose.sealY;packageObject.setPeel(pose.peel);
+      packageObject.shadow.visible=ms<800;
+    }
+    if(model)model.position.y=pose.modelY;
+    if(stage){stage.visible=pose.stageVisible;stage.position.y=pose.stageY;}
+    controls.hidden=!ready||ms<2600;
+    element.dataset.openingTime=String(Math.round(ms));
+    // Moving the canvas can leave an obsolete intersection result until layout.
+    // The presentation clock already runs in RAF; commit this pose now.
+    paint();
+  }
+  if(packaging){
+    element.classList.add('qiwu-package-viewer');
+    canvas.tabIndex=-1;canvas.setAttribute('aria-label',`${theme.label}包装盒`);
+    status.hidden=true;controls.hidden=true;
+    if(initRenderer()){
+      try{packageObject=await createPackaging(theme.id);scene.add(packageObject.root);applyOpening(0);resize();element.dataset.status='packaged';}
+      catch{setStatus('error','包装暂时未能显示','请重新打开这只盒子。');}
+    }
+  }else void retry(true);
 
   return {
-    retry, setRotation,
+    retry, setRotation, element, resize,
+    sealAnchor(){
+      if(!camera)return {x:.57,y:.3};
+      const point=new THREE.Vector3(.72,1.87,.91).project(camera);
+      return {x:(point.x+1)/2,y:(1-point.y)/2};
+    },
+    setSealProgress(value){initialPeel=value;packageObject?.setPeel(value);render();},
+    setOpeningTime:applyOpening,
+    loadCollectible(options){
+      item=options.item;modelUrl=options.modelUrl;assetBase=options.assetBase||assetBase;
+      orientation=modelAssets[item.id]?.orientation||0;onStatus=options.onStatus||onStatus;
+      element.setAttribute('aria-label',`${item.name}的藏品展示`);
+      element.classList.add('has-collectible');
+      return retry(true);
+    },
     getImage() {
       if (!ready || !paint()) return null;
       const exportRenderer = renderer;
