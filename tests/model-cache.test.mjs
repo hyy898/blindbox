@@ -34,3 +34,11 @@ test('live file inventory overrides stale missing metadata and notices removal',
  await refreshModelAssets(base,{fetchImpl:async()=>{throw Error('offline')}});
  assert.equal(modelAssets['ms-06'].available,null);
 });
+
+test('retired series metadata is removed when the live prize catalog changes', async()=>{
+ modelAssets['mf-10']={available:true,thumbnail:'./thumbnails/mf-10.png'};
+ await refreshModelAssets('http://test/',{fetchImpl:async()=>({ok:true,json:async()=>({models:{'vt-01':{available:true,version:'toy-v1',bytes:42,url:'models/vt-01.glb?v=toy-v1'}}})})});
+ assert.equal(modelAssets['mf-10'],undefined);
+ assert.deepEqual(Object.keys(modelAssets),['vt-01']);
+ assert.equal(modelAssets['vt-01'].available,true);
+});

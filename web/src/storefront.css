@@ -42,7 +42,7 @@ dialog::backdrop{background:#23140c7a;backdrop-filter:blur(3px)}.experience{bord
 .niche-figure.generated-art{left:7%;right:7%;height:70%;top:1%;filter:drop-shadow(0 11px 7px #1d0e0a70)}
 .shelf-illustration{width:100%;height:100%;object-fit:contain;display:block}
 .art-midnight-snack .shelf-illustration{transform:translateY(4%) scale(1.23)}
-.art-milk-frog .shelf-illustration{transform:translateY(3%) scale(1.14)}
+.art-vintage-toys .shelf-illustration{transform:translateY(2%) scale(1.06)}
 .art-working-animals .shelf-illustration{transform:translateY(-1%) scale(.95)}
 .art-weird-appliances .shelf-illustration{transform:translateY(-1%) scale(.95)}
 @media(max-width:750px){.niche-figure.generated-art{left:14%;right:14%;height:69%;top:0}.illustration-note{top:65%}}

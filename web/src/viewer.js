@@ -153,14 +153,12 @@ function addStage(scene, theme) {
     add(new THREE.BoxGeometry(2.35, 0.13, 1.75), paper, 0, -0.09, 0);
     add(new THREE.BoxGeometry(1.85, 0.015, 1.28), porcelain, 0, -0.012, 0.05);
     add(new THREE.BoxGeometry(0.5, 0.2, 0.04), accent, -0.76, 0.08, -0.72);
-  } else if (id === 'milk-frog') {
-    const water = new THREE.MeshStandardMaterial({ color: '#b7c7b2', roughness: 0.3, metalness: 0.08 });
-    add(new THREE.CylinderGeometry(1.14, 1.19, 0.14, 72), paper, 0, -0.12, 0);
-    add(new THREE.CylinderGeometry(1.07, 1.07, 0.02, 72), water, 0, -0.036, 0);
-    for (const radius of [0.85, 1.02]) {
-      add(new THREE.TorusGeometry(radius, 0.007, 5, 72), porcelain, 0, -0.019, 0, Math.PI / 2);
-    }
-    add(new THREE.CylinderGeometry(0.57, 0.57, 0.02, 48, 1, false, 0.16, Math.PI * 1.88), accent, 0, -0.01, 0);
+  } else if (id === 'vintage-toys') {
+    const wood = new THREE.MeshStandardMaterial({ color: '#a8784e', roughness: 0.85 });
+    const brass = new THREE.MeshStandardMaterial({ color: '#b89556', roughness: 0.55, metalness: 0.4 });
+    add(new THREE.CylinderGeometry(1.12, 1.18, 0.16, 72), wood, 0, -0.12, 0);
+    add(new THREE.CylinderGeometry(1.06, 1.06, 0.035, 72), paper, 0, -0.025, 0);
+    add(new THREE.TorusGeometry(1.08, 0.015, 8, 72), brass, 0, -0.008, 0, Math.PI / 2);
   } else {
     add(new THREE.BoxGeometry(2.15, 0.16, 1.8), paper, 0, -0.11, 0);
     add(new THREE.BoxGeometry(1.94, 0.025, 1.58), porcelain, 0, -0.018, 0);

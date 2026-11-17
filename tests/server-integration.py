@@ -94,7 +94,7 @@ with tempfile.TemporaryDirectory(prefix='qiwu-api-test-') as temp:
         start()
         _, config = request('config')
         series = config['series']
-        check('four real series and 31 identities', len(series) == 4 and sum(len(s['items']) for s in series) == 31)
+        check('four current series and 28 identities', [s['id'] for s in series] == ['midnight-snack', 'working-animals', 'weird-appliances', 'vintage-toys'] and all(len(s['items']) == 7 for s in series))
         check('original series prices', [s['boxPrice'] for s in series] == [100, 200, 400, 1000])
         _, initial = request('state')
         initial = initial['state']

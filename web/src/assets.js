@@ -16,6 +16,8 @@ export async function refreshModelAssets(base, {fetchImpl = globalThis.fetch, ti
       if(!response.ok) throw new Error('资源清单暂时不可用');
       const result=await response.json();
       if(!result.models || typeof result.models!=='object') throw new Error('资源清单格式错误');
+      // The live catalog owns identities too: retired series must not inflate counts.
+      for(const id of Object.keys(modelAssets)) if (!(id in result.models)) delete modelAssets[id];
       for(const [id,asset] of Object.entries(result.models)) {
         modelAssets[id]={...previews[id],...asset,available:asset.available===true ? true : asset.available===false ? false : null};
       }
