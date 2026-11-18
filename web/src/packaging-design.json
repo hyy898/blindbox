@@ -1,0 +1,159 @@
+{
+  "schema_version": "1.0.0",
+  "design_id": "qiwu-box-20261118",
+  "units": "logical model units, uniform scale; not a manufacturing dieline",
+  "box": {
+    "width": 240,
+    "closed_height": 216,
+    "depth": 180,
+    "lid_height": 32,
+    "body_height": 184,
+    "front_plane": {
+      "origin": "top-left of closed front",
+      "lid_y": [
+        0,
+        32
+      ],
+      "body_y": [
+        32,
+        216
+      ]
+    },
+    "top_plane": {
+      "width": 240,
+      "depth": 180,
+      "origin": "back-left viewed from above",
+      "front_edge_depth": 180
+    },
+    "component_policy": "lid and body are separate meshes/DOM layers; lift entire lid; do not fold front art as a carton flap"
+  },
+  "palette": {
+    "lid": "#E9DDC4",
+    "mark_ink": "#D4B786",
+    "series_type": "#F0E3C9",
+    "seal": "#722F39"
+  },
+  "body_front": {
+    "width": 240,
+    "height": 184,
+    "mark_box": {
+      "x": 74,
+      "y": 38,
+      "width": 92,
+      "height": 80,
+      "center": [
+        120,
+        78
+      ]
+    },
+    "series_type": {
+      "family_source": "Noto Serif CJK SC Regular",
+      "path_outlined": true,
+      "font_size": 20,
+      "baseline_y": 153,
+      "characters_per_line": 4,
+      "glyph_origins_x": [
+        75.5,
+        98.5,
+        121.5,
+        144.5
+      ],
+      "tracking": 3,
+      "line_count": 1
+    },
+    "background_included": true,
+    "baked_shadow": false,
+    "ornamental_border": false
+  },
+  "seal": {
+    "width": 24,
+    "front_height": 60,
+    "top_wrap_depth": 20,
+    "unfolded_height": 80,
+    "front_placement": {
+      "x": 180,
+      "y": 0,
+      "center_x": 192
+    },
+    "top_placement": {
+      "x": 180,
+      "depth": 160,
+      "width": 24,
+      "depth_span": 20
+    },
+    "single_glyph": "奇",
+    "glyph_front_baseline_y": 38,
+    "glyph_font_size": 18,
+    "front_asset": "seal-front.svg",
+    "top_asset": "seal-top.svg",
+    "unfolded_asset": "seal.svg",
+    "lid_body_seam_front_y": 32,
+    "top_front_fold_unfolded_y": 20,
+    "no_printed_fold_line": true,
+    "note": "Use front+top segments for 3D faces; seal.svg is the unfolded strip, not a 24×60 front texture."
+  },
+  "print_whitelist": {
+    "front": [
+      "one series mark",
+      "one four-character series name"
+    ],
+    "seal": [
+      "奇"
+    ],
+    "lid_top": [],
+    "lid_sides": [],
+    "body_sides": [],
+    "body_back": [],
+    "forbidden": [
+      "large brand name",
+      "subtitle",
+      "sequence number",
+      "English tagline",
+      "bottom slogan bar",
+      "decorative frame",
+      "wrapped series title"
+    ]
+  },
+  "series": [
+    {
+      "key": "midnight-diner",
+      "name": "深夜食堂",
+      "body_color": "#667057",
+      "mark": "蒸汽碗",
+      "body_front_asset": "body-front-midnight-diner.svg",
+      "icon_asset": "icon-midnight-diner.svg"
+    },
+    {
+      "key": "office-animals",
+      "name": "打工动物",
+      "body_color": "#4D6570",
+      "mark": "公文包与爪印",
+      "body_front_asset": "body-front-office-animals.svg",
+      "icon_asset": "icon-office-animals.svg"
+    },
+    {
+      "key": "strange-appliances",
+      "name": "怪奇家电",
+      "body_color": "#4D4E65",
+      "mark": "老电视",
+      "body_front_asset": "body-front-strange-appliances.svg",
+      "icon_asset": "icon-strange-appliances.svg"
+    },
+    {
+      "key": "old-dream-toys",
+      "name": "旧梦玩具",
+      "body_color": "#74414B",
+      "mark": "发条钥匙",
+      "body_front_asset": "body-front-old-dream-toys.svg",
+      "icon_asset": "icon-old-dream-toys.svg"
+    }
+  ],
+  "integration": {
+    "svg_has_no_external_font_dependency": true,
+    "svg_has_no_text_nodes": true,
+    "svg_has_no_raster_images": true,
+    "accessible_name": "Preserve aria labels or add the same name on the enclosing interactive element.",
+    "material_note": "Flat SVG colors only. Warm light, paper grain and contact shadows belong to the scene material; do not bake them into these face assets.",
+    "do_not_infer_business_ids": true
+  }
+}

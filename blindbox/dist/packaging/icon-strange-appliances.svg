@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="92" height="80" viewBox="0 0 92 80" role="img" aria-labelledby="asset-title asset-desc"><title id="asset-title">怪奇家电系列图形</title><desc id="asset-desc">老电视；透明底；香槟色 #D4B786；仅矢量形状。</desc><g stroke="#D4B786" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M40 24 L25 7 M47 24 L63 7" stroke-width="4"/>
+<rect x="7" y="24" width="78" height="48" rx="9" stroke-width="4.8"/>
+<rect x="16" y="32" width="47" height="32" rx="7" stroke-width="3.7"/>
+<path d="M70 60 H77 M70 65 H77" stroke-width="2.8"/>
+</g><g fill="#D4B786"><circle cx="25" cy="7" r="3.5"/><circle cx="63" cy="7" r="3.5"/><circle cx="73.5" cy="39" r="3.8"/><circle cx="73.5" cy="50" r="3.5"/><path d="M17 71 H25 L23 79 H17Z M67 71 H75 V79 H69Z"/></g></svg>

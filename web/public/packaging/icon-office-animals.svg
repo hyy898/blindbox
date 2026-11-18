@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="92" height="80" viewBox="0 0 92 80" role="img" aria-labelledby="asset-title asset-desc"><title id="asset-title">打工动物系列图形</title><desc id="asset-desc">公文包与爪印；透明底；香槟色 #D4B786；仅矢量形状。</desc><g fill="#D4B786">
+<path d="M13 25 H63 Q70 25 70 32 V39 C55 47 22 47 6 39 V32 Q6 25 13 25Z"/>
+<path d="M6 43 C20 50 48 53 62 46 V53 C59 57 59 66 63 72 H13 Q6 72 6 65Z"/>
+<rect x="33" y="43" width="11" height="10" rx="2"/>
+<path d="M66 68 C67 63 70 59 75 58 C80 57 84 61 87 65 C92 71 88 77 82 75 C78 73 75 74 71 76 C66 78 62 73 66 68Z"/>
+<ellipse cx="65.5" cy="56" rx="3.8" ry="5.6" transform="rotate(-24 65.5 56)"/>
+<ellipse cx="74" cy="50" rx="4.1" ry="5.8"/>
+<ellipse cx="83.5" cy="51.5" rx="4.1" ry="5.8" transform="rotate(12 83.5 51.5)"/>
+<ellipse cx="88" cy="60" rx="3.4" ry="4.8" transform="rotate(25 88 60)"/>
+</g><path d="M24 25 V18 Q24 12 30 12 H47 Q53 12 53 18 V25" fill="none" stroke="#D4B786" stroke-width="4.5"/></svg>
