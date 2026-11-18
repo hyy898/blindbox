@@ -57,7 +57,7 @@ npm start -- --isolated
 
 ## 开发与检查
 
-本轮包装实现与验收证据见 [盒子改造记录](docs/box-redesign/verification.md)，其中单独列出尚待补验的录屏与浏览器项目。
+本轮包装实现与验收证据见 [盒子改造记录](docs/box-redesign/verification.md)，包含 Chrome、Safari 验证与完整录屏。参赛材料可直接打开[项目报告书](docs/box-redesign/奇物百货项目报告书.pdf)或[带字幕实机演示](docs/box-redesign/qiwu-demo-short.mp4)。
 
 沿用 Vanilla JavaScript、Three.js 与 Vite。当前前端源码位于根目录 `web/`，构建输出到 `blindbox/dist/`。owner 补传中的旧前端位于 `blindbox/web/`，保留供参考，不应覆盖当前前端。C++ 服务源码位于 `blindbox/server/`，自动编译到 `blindbox/server/build/dev/`，启动器再运行 `.local/runtime/` 中的副本，避免生成的程序混入 Git 变更。
 
